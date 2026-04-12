@@ -1,0 +1,17 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Downloaded WasmEdge prebuilt (fetched automatically during build)
+app/build/wasmedge/
+app/build/wasmedge_jniLibs/
+
+# Android build outputs
+app/build/
