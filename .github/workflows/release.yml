@@ -79,6 +79,47 @@ jobs:
           retention-days: 30
 
   # ────────────────────────────────────────────────────────────────────────────
+  tag:
+    name: Create & push version tag
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version from build.gradle.kts
+        id: version
+        run: |
+          VERSION=$(grep 'versionName\s*=' app/build.gradle.kts | head -1 \
+            | sed 's/.*versionName\s*=\s*"\(.*\)".*/\1/')
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not extract versionName from app/build.gradle.kts"
+            exit 1
+          fi
+          echo "version=v${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Detected version: v${VERSION}"
+
+      - name: Create and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          TAG="${{ steps.version.outputs.version }}"
+          # If the tag already points to the current commit, skip (no-op).
+          # Otherwise create/update it so the release job picks up the latest build.
+          CURRENT_SHA=$(git rev-parse HEAD)
+          EXISTING_SHA=$(git rev-list -n 1 "$TAG" 2>/dev/null || true)
+          if [ "$EXISTING_SHA" = "$CURRENT_SHA" ]; then
+            echo "Tag $TAG already points to $CURRENT_SHA – nothing to do."
+          else
+            git tag -f "$TAG"
+            git push origin "$TAG" --force
+          fi
+
+  # ────────────────────────────────────────────────────────────────────────────
   release:
     name: Create GitHub Release
     if: startsWith(github.ref, 'refs/tags/v')
