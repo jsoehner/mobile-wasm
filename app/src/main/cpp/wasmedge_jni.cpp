@@ -14,7 +14,7 @@
 static constexpr uint32_t IN_OFFSET  = 0u;
 static constexpr uint32_t OUT_OFFSET = 65536u;   // page 1 (64 KiB)
 static constexpr uint32_t OUT_CAP    = 65536u;
-static constexpr uint32_t MAX_INPUT  = 65536u;
+static constexpr uint32_t WASM_MAX_INPUT  = 65536u;
 
 struct EngineState {
     WasmEdge_VMContext    *vm    = nullptr;
@@ -154,7 +154,7 @@ Java_com_example_mobilewasm_WasmEngine_nativeRun(JNIEnv *env, jobject /*thiz*/,
     std::string input(inputCStr);
     env->ReleaseStringUTFChars(jsonInput, inputCStr);
 
-    if (input.size() > MAX_INPUT) return err("input exceeds 65536 bytes");
+    if (input.size() > WASM_MAX_INPUT) return err("input exceeds 65536 bytes");
 
     // ── Locate the active module instance ──
     const WasmEdge_ModuleInstanceContext *modInst = WasmEdge_VMGetActiveModule(state->vm);
