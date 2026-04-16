@@ -20,6 +20,14 @@ const PRECACHE_ASSETS = [
   './icons/icon-512.png',
 ];
 
+/**
+ * Normalised path suffixes for O(1) fetch-handler lookup.
+ * Strips the leading './' so we can test against request.url directly.
+ */
+const PRECACHE_SUFFIXES = new Set(
+  PRECACHE_ASSETS.map(a => a.replace(/^\.\//, '')),
+);
+
 /* ── Install: pre-cache app shell ──────────────────────────────── */
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -58,7 +66,7 @@ self.addEventListener('fetch', event => {
 
       return fetch(request).then(response => {
         // Cache successful responses for app-shell assets.
-        if (response.ok && PRECACHE_ASSETS.some(a => request.url.endsWith(a.replace('./', '')))) {
+        if (response.ok && PRECACHE_SUFFIXES.has(url.pathname.split('/').pop())) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
         }
