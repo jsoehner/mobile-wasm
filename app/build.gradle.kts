@@ -1,5 +1,5 @@
 import java.net.HttpURLConnection
-import java.net.URL as JavaURL
+import java.net.URI
 
 plugins {
     id("com.android.application")
@@ -7,7 +7,7 @@ plugins {
 }
 
 val wasmedgeVersion = "0.14.1"
-val wasmedgeDir = file("${buildDir}/wasmedge")
+val wasmedgeDir = layout.buildDirectory.dir("wasmedge").get().asFile
 
 // ──────────────────────────────────────────────────────────────
 // Task: download WasmEdge Android arm64 prebuilt before CMake
@@ -22,19 +22,19 @@ tasks.register("downloadWasmedge") {
         val archiveUrl =
             "https://github.com/WasmEdge/WasmEdge/releases/download/$wasmedgeVersion/" +
             "WasmEdge-$wasmedgeVersion-android_aarch64.tar.gz"
-        val archive = file("${buildDir}/wasmedge_android.tar.gz")
+        val archive = layout.buildDirectory.file("wasmedge_android.tar.gz").get().asFile
 
         logger.lifecycle("Downloading WasmEdge $wasmedgeVersion for Android arm64…")
         archive.parentFile.mkdirs()
 
-        var conn = JavaURL(archiveUrl).openConnection() as HttpURLConnection
+        var conn = URI(archiveUrl).toURL().openConnection() as HttpURLConnection
         conn.instanceFollowRedirects = true
         // Follow up to 5 redirects manually (some releases redirect)
         repeat(5) {
             if (conn.responseCode in 300..399) {
                 val loc = conn.getHeaderField("Location")
                 conn.disconnect()
-                conn = JavaURL(loc).openConnection() as HttpURLConnection
+                conn = URI(loc).toURL().openConnection() as HttpURLConnection
                 conn.instanceFollowRedirects = true
             }
         }
@@ -59,7 +59,7 @@ tasks.register("downloadWasmedge") {
 tasks.register<Copy>("copyWasmedgeLib") {
     dependsOn("downloadWasmedge")
     from("${wasmedgeDir}/lib/libwasmedge.so")
-    into("${buildDir}/wasmedge_jniLibs/arm64-v8a")
+    into(layout.buildDirectory.dir("wasmedge_jniLibs/arm64-v8a").get().asFile)
 }
 
 android {
@@ -131,7 +131,7 @@ android {
 
     sourceSets {
         getByName("main") {
-            jniLibs.srcDirs("${buildDir}/wasmedge_jniLibs")
+            jniLibs.srcDirs(layout.buildDirectory.dir("wasmedge_jniLibs"))
         }
     }
 

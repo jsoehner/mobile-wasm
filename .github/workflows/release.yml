@@ -22,17 +22,17 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: gradle
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Make gradlew executable
         run: chmod +x gradlew
@@ -56,7 +56,7 @@ jobs:
       # The downloadWasmedge Gradle task fetches the prebuilt arm64 .so.
       # We cache it so repeated CI runs skip the ~30 MB download.
       - name: Cache WasmEdge prebuilt
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: app/build/wasmedge
           key: wasmedge-android-arm64-0.14.1
@@ -72,7 +72,7 @@ jobs:
           echo "name=$(basename $APK)" >> "$GITHUB_OUTPUT"
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-apk
           path: ${{ steps.apk_path.outputs.path }}
@@ -89,7 +89,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Extract version from build.gradle.kts
         id: version
@@ -130,12 +130,12 @@ jobs:
 
     steps:
       - name: Download APK artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release-apk
 
       - name: Create GitHub Release and upload APK
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: '*.apk'
           generate_release_notes: true
