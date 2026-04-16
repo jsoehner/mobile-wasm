@@ -94,7 +94,7 @@ val store  = PackageStore.getInstance(context)
 val result = store.getInstaller()
     .installFromUrl(
         url          = "https://example.com/my-package.zip",
-        expectedSha256 = "e3b0c44298fc1c149afb…",   // full 64-char hex digest
+        expectedSha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",   // 64-char hex digest
         packageName  = "my-package"
     )
 
@@ -159,7 +159,7 @@ val removed: Boolean = store.removePackage("my-package")
    }
    ```
    Constraints enforced by `ManifestValidator`:
-   - `version` must be ≥ 1.
+   - `version` must be an integer ≥ 1. Only version `1` is currently defined; higher values pass validation but are not yet interpreted differently.
    - `name` must not be blank.
    - At least one module must be declared.
    - Every module `file` must end in `.wasm` and must not contain `..` or an absolute path.
