@@ -3,6 +3,11 @@
 An Android application that embeds the [WasmEdge](https://wasmedge.org/) runtime and provides
 a full lifecycle for downloading, verifying, extracting, and executing Wasm packages.
 
+Wasm modules run inside a hardware-enforced sandbox with no direct access to the OS,
+filesystem, or network. All code reaches the device as a cryptographically verified ZIP
+package, making it straightforward to deliver and update logic safely without shipping a
+new APK.
+
 ## Features
 
 | Feature | Details |
@@ -66,59 +71,216 @@ export KEY_PASS=<key password>
 ./gradlew assembleRelease
 ```
 
-## Running the demo
+## Using MobileWasm
 
-1. Install the APK: `adb install app/build/outputs/apk/release/app-release.apk`
+### Running the demo
+
+1. Install the APK:
+   ```bash
+   adb install app/build/outputs/apk/release/app-release.apk
+   ```
 2. Open **MobileWasm** on the device.
-3. Tap **Load Demo Package** -- the bundled `demo.zip` is extracted, the `echo` module is loaded.
+3. Tap **Load Demo Package** — the bundled `demo.zip` is extracted and the `echo` module is loaded.
 4. Enter any JSON in the input field (max 65 536 bytes) and tap **Run Module**.
-5. The module echoes the input back.
+5. The module echoes the input back in the output area.
 
-## Creating a custom Wasm package
+### Installing a package from a URL
 
-1. Write a Wasm module that exports `memory` and `run(i32,i32,i32,i32)->i32`.
-2. Create `manifest.json`:
-
-```json
-{
-  "version": 1,
-  "name": "my-package",
-  "description": "My custom package",
-  "modules": [
-    { "name": "my-module", "file": "my_module.wasm" }
-  ]
-}
-```
-
-3. Zip together and record the SHA-256:
-
-```bash
-zip my-package.zip manifest.json my_module.wasm
-sha256sum my-package.zip
-```
-
-4. Install from a URL in Kotlin:
+Packages can be fetched at runtime without a new APK release. Supply the download URL and its
+expected SHA-256 digest so the runtime can verify the download before extracting anything:
 
 ```kotlin
-val result = PackageStore.getInstance(context)
-    .getInstaller()
-    .installFromUrl("https://example.com/my-package.zip", "<sha256>", "my-package")
+val store  = PackageStore.getInstance(context)
+val result = store.getInstaller()
+    .installFromUrl(
+        url          = "https://example.com/my-package.zip",
+        expectedSha256 = "e3b0c44298fc1c149afb…",   // full 64-char hex digest
+        packageName  = "my-package"
+    )
 
 result.onSuccess { ir ->
-    val bytes = store.getModuleBytes("my-package", "my-module")!!
-    lifecycleScope.launch {
-        engine.load("my-module", bytes)
-        val output = engine.run("""{"key":"value"}""").getOrThrow()
-    }
+    Log.i("App", "Installed: ${ir.manifest.name} (${ir.manifest.modules.size} module(s))")
+}
+result.onFailure { err ->
+    Log.e("App", "Install failed: ${err.message}")
 }
 ```
+
+### Loading and executing a module
+
+After a package is installed, retrieve the Wasm bytes from the store and hand them to the
+engine. All engine calls are `suspend` functions and must run on a coroutine:
+
+```kotlin
+val engine = WasmEngine.getInstance()
+
+lifecycleScope.launch(Dispatchers.IO) {
+    val bytes = store.getModuleBytes("my-package", "my-module")
+        ?: error("module not found")
+
+    engine.load("my-module", bytes).getOrThrow()       // hot-swaps any previous module
+
+    val output = engine.run("""{"key":"value"}""").getOrThrow()
+    withContext(Dispatchers.Main) { textView.text = output }
+}
+```
+
+`engine.run` returns the JSON string produced by the module, or a `Result.failure` if no
+module is loaded or the Wasm execution fails.
+
+### Managing the package store
+
+```kotlin
+val store = PackageStore.getInstance(context)
+
+// List all installed packages
+val packages: List<String> = store.listPackages()
+
+// Read a package's manifest
+val manifest: WasmManifest? = store.getManifest("my-package")
+
+// Remove a package
+val removed: Boolean = store.removePackage("my-package")
+```
+
+### Creating a custom Wasm package
+
+1. Write a Wasm module that exports `memory` and `run(i32,i32,i32,i32)->i32`.
+
+2. Create `manifest.json`:
+   ```json
+   {
+     "version": 1,
+     "name": "my-package",
+     "description": "My custom package",
+     "modules": [
+       { "name": "my-module", "file": "my_module.wasm", "description": "Does something useful" }
+     ]
+   }
+   ```
+   Constraints enforced by `ManifestValidator`:
+   - `version` must be ≥ 1.
+   - `name` must not be blank.
+   - At least one module must be declared.
+   - Every module `file` must end in `.wasm` and must not contain `..` or an absolute path.
+   - Module names must be unique within the package.
+
+3. Zip the files together and record the SHA-256:
+   ```bash
+   zip my-package.zip manifest.json my_module.wasm
+   sha256sum my-package.zip
+   ```
+
+4. Host the ZIP at an HTTPS URL, then install it using `installFromUrl` as shown above.
+
+### Run ABI
+
+The engine calls the module's exported `run` function with this signature:
+
+```
+run(inPtr: i32, inLen: i32, outPtr: i32, outCap: i32) → outLen: i32
+```
+
+| Parameter | Description |
+|---|---|
+| `inPtr` | Offset in Wasm linear memory where the JSON input starts (`0`) |
+| `inLen` | Byte length of the JSON input (≤ 65 536) |
+| `outPtr` | Offset in Wasm linear memory where the module should write its JSON output (`65536`) |
+| `outCap` | Maximum bytes the module may write (`65536`) |
+| return value | Actual byte length written to `outPtr`; negative or > `outCap` is treated as an error |
+
+Both the input and output buffers live in the module's own linear memory — the host and module
+share no pointers into host address space.
+
+## Security
+
+MobileWasm applies multiple independent layers of defence so that a malicious or buggy package
+cannot harm the device or its data.
+
+### WebAssembly sandbox
+
+Every module executes inside the [WasmEdge](https://wasmedge.org/) runtime, which enforces
+the WebAssembly security model:
+
+- **Capability-free by default.** A Wasm module has no access to the filesystem, network,
+  environment variables, or system calls unless the host explicitly imports those capabilities.
+  MobileWasm does not grant any such imports, so modules are strictly isolated to computation
+  over their own linear memory.
+- **Memory isolation.** Each module instance has its own linear memory. It cannot read or write
+  outside that region and has no visibility into host (JVM/Android) memory.
+- **Structured control flow.** The WebAssembly spec forbids arbitrary jumps and stack smashing;
+  branches must target declared labels, and indirect calls are validated through typed function
+  tables. This eliminates whole classes of native-code exploits.
+- **Validated before execution.** `WasmEdge_VMValidate` checks the module's type structure and
+  instruction semantics before `WasmEdge_VMInstantiate` creates a live instance. A module that
+  fails validation is rejected and never runs.
+
+### Package integrity
+
+Before a single byte of a downloaded package is extracted or executed, `PackageInstaller`
+computes the SHA-256 digest of the raw download and compares it (case-insensitively) against
+the caller-supplied expected digest:
+
+```
+SHA-256 mismatch → exception thrown, no extraction performed
+```
+
+This means a package can only run if it was produced by a party whose expected hash is known to
+the application, preventing both tampering in transit and supply-chain substitution.
+
+### ZIP-slip protection
+
+ZIP archives can embed entries with paths like `../../etc/passwd` that, if extracted naively,
+would write files outside the intended destination. MobileWasm guards against this at two
+independent levels:
+
+1. **Extraction level (`PackageInstaller.extractZipSafe`).** Every entry's canonical path is
+   computed with `File.canonicalPath` and checked to start with the canonical destination
+   directory before any bytes are written. Entries that fail the check raise a
+   `SecurityException` and abort the entire extraction.
+2. **Manifest level (`ManifestValidator`).** Module `file` fields are rejected if they contain
+   `..` sequences or start with `/`, ensuring that even a hand-crafted manifest cannot redirect
+   the engine to load a file from outside the package directory.
+
+### Decompression bomb protection
+
+ZIP entries are individually capped at **50 MiB**. An entry that exceeds this limit raises a
+`SecurityException` and rolls back the installation, preventing a tiny ZIP from expanding into
+an unbounded amount of disk or memory usage.
+
+### Serialised execution
+
+`WasmEngine` is guarded by a `kotlinx.coroutines.sync.Mutex`. Only one coroutine can call
+`load` or `run` at a time. Hot-swapping (replacing the active module) rebuilds the entire VM
+context atomically, so there is no window where a caller could observe a partially-loaded
+module.
+
+### Bounded host↔guest communication
+
+The JSON I/O buffers are hard-coded to **65 536 bytes** each. Input larger than this limit is
+rejected before any data is written into Wasm memory. The engine also validates the output
+length returned by the module against the same cap, so a module cannot cause an out-of-bounds
+read in the host.
+
+### Threat model summary
+
+| Threat | Mitigation |
+|---|---|
+| Tampered download | SHA-256 digest verification before extraction |
+| Path-traversal in ZIP | Canonical-path check at extraction + manifest validator |
+| Decompression bomb | 50 MiB per-entry cap |
+| Module accessing device resources | WasmEdge sandbox; no capability imports |
+| Module corrupting host memory | Wasm linear memory isolation |
+| Malformed module crashing runtime | WasmEdge validate step before instantiation |
+| Race condition / partial module swap | `Mutex`-serialised `load` and `run` |
+| Oversized I/O buffer read | Hard 65 536-byte cap on input and output |
 
 ## CI / Releases
 
 The [Build & Release APK](.github/workflows/release.yml) workflow:
 
-- Runs on every push to `main` and every pull request -- uploads the APK as a workflow artifact.
-- On a version tag (`v*.*.*`) -- creates a GitHub Release with the APK attached.
+- Runs on every push to `main` and every pull request — uploads the APK as a workflow artifact.
+- On a version tag (`v*.*.*`) — creates a GitHub Release with the APK attached.
 
 To publish a release:
 
