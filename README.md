@@ -1,5 +1,59 @@
 # MobileWasm
 
+An Android application **and** companion Progressive Web App (PWA) that run WebAssembly modules
+in a sandboxed environment — on-device via [WasmEdge](https://wasmedge.org/) (Android) or
+directly in the browser via the WebAssembly JavaScript API (PWA).
+
+## Progressive Web App
+
+The `pwa/` directory contains a self-contained PWA that mirrors the Android app's Wasm execution
+model and shares the same run ABI:
+
+```
+run(inPtr: i32, inLen: i32, outPtr: i32, outCap: i32) → outLen: i32
+```
+
+### Quick start
+
+Serve the `pwa/` directory over HTTPS (required for service-worker and install prompt):
+
+```bash
+# With Python
+cd pwa && python3 -m http.server 8080
+
+# With Node.js (npx serve)
+npx serve pwa
+```
+
+Open the URL in a modern browser. The app offers:
+
+| Feature | Details |
+|---|---|
+| **Demo module** | Built-in echo module (same ABI as the Android `demo.zip`) — loads instantly, no file needed |
+| **Upload .wasm** | Load any `.wasm` file from disk that exports `memory` and `run` |
+| **Fetch from URL** | Download and compile a `.wasm` file from any URL |
+| **Run module** | Send JSON input (≤ 65 536 bytes); see JSON output |
+| **Offline support** | Service worker caches the app shell after first load |
+| **Installable** | Meets PWA install criteria — add to home screen on mobile or desktop |
+
+### PWA file layout
+
+```
+pwa/
+├── index.html          # App shell
+├── styles.css          # Dark-theme UI styles
+├── app.js              # Wasm engine + UI logic
+├── manifest.json       # Web App Manifest (icons, theme, display mode)
+├── service-worker.js   # Cache-first offline strategy
+├── icons/
+│   ├── icon-192.png    # PWA icon (192 × 192)
+│   └── icon-512.png    # PWA icon (512 × 512)
+└── demo/
+    └── echo.wat        # WAT source for the bundled echo module
+```
+
+---
+
 An Android application that embeds the [WasmEdge](https://wasmedge.org/) runtime and provides
 a full lifecycle for downloading, verifying, extracting, and executing Wasm packages.
 
