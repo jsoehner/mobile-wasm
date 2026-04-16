@@ -1,0 +1,156 @@
+name: Build & Release APK
+
+on:
+  push:
+    branches: [ main ]
+    tags:     [ 'v*.*.*' ]
+  pull_request:
+    branches: [ main ]
+
+# Only one release job runs at a time; cancel in-progress runs on the same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ────────────────────────────────────────────────────────────────────────────
+  build:
+    name: Build release APK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      # Create an Android debug keystore used for release signing in CI.
+      # For production releases, override with KEYSTORE_PATH / KEYSTORE_PASS /
+      # KEY_ALIAS / KEY_PASS repository secrets.
+      - name: Create debug keystore (CI signing)
+        run: |
+          mkdir -p ~/.android
+          if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -genkey -v \
+              -keystore ~/.android/debug.keystore \
+              -storepass android \
+              -alias androiddebugkey \
+              -keypass android \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+      # The downloadWasmedge Gradle task fetches the prebuilt arm64 .so.
+      # We cache it so repeated CI runs skip the ~30 MB download.
+      - name: Cache WasmEdge prebuilt
+        uses: actions/cache@v4
+        with:
+          path: app/build/wasmedge
+          key: wasmedge-android-arm64-0.14.1
+
+      - name: Build release APK
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Locate APK
+        id: apk_path
+        run: |
+          APK=$(find app/build/outputs/apk/release -name '*.apk' | head -1)
+          echo "path=$APK" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename $APK)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: ${{ steps.apk_path.outputs.path }}
+          retention-days: 30
+
+  # ────────────────────────────────────────────────────────────────────────────
+  tag:
+    name: Create & push version tag
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version from build.gradle.kts
+        id: version
+        run: |
+          VERSION=$(grep 'versionName\s*=' app/build.gradle.kts | head -1 \
+            | sed 's/.*versionName\s*=\s*"\(.*\)".*/\1/')
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not extract versionName from app/build.gradle.kts"
+            exit 1
+          fi
+          echo "version=v${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Detected version: v${VERSION}"
+
+      - name: Create and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          TAG="${{ steps.version.outputs.version }}"
+          # If the tag already points to the current commit, skip (no-op).
+          # Otherwise create/update it so the release job picks up the latest build.
+          CURRENT_SHA=$(git rev-parse HEAD)
+          EXISTING_SHA=$(git rev-list -n 1 "$TAG" 2>/dev/null || true)
+          if [ "$EXISTING_SHA" = "$CURRENT_SHA" ]; then
+            echo "Tag $TAG already points to $CURRENT_SHA – nothing to do."
+          else
+            git tag -f "$TAG"
+            git push origin "$TAG" --force
+          fi
+
+  # ────────────────────────────────────────────────────────────────────────────
+  release:
+    name: Create GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-apk
+
+      - name: Create GitHub Release and upload APK
+        uses: softprops/action-gh-release@v2
+        with:
+          files: '*.apk'
+          generate_release_notes: true
+          body: |
+            ## MobileWasm ${{ github.ref_name }}
+
+            ### Installation
+            Download the `.apk` below and sideload it:
+            ```
+            adb install MobileWasm-release.apk
+            ```
+
+            ### What's included
+            - WasmEdge 0.14.1 runtime (arm64-v8a)
+            - ZIP package installer with SHA-256 verification and ZIP-slip protection
+            - `manifest.json` parser / validator supporting multiple independent modules
+            - Global singleton `WasmEngine` with mutex-guarded load / run / hot-swap
+            - Demo package bundled in assets (`sample/demo.zip`)
