@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "name": "fixed-error-package",
+  "modules": [
+    { "name": "fixed_error", "file": "fixed_error.wasm" }
+  ]
+}

@@ -1,0 +1,3 @@
+9564b79672d4da522ea01cb6871c871c24c9fbfe65cbb1cd051e3b72bb833077  dist/fixed_ok.zip
+b1790bd4feb15cc730f8101ed22c73e2c8abd8e2a2f93388e2c783c5923c0968  dist/fixed_error.zip
+73893e76159ca965ae9ed1a3ce0cf8f20aad16cc9788723cf46c8a04662ccc87  dist/echo_wrapped.zip

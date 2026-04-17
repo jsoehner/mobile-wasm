@@ -64,6 +64,88 @@ jobs:
       - name: Build release APK
         run: ./gradlew assembleRelease --no-daemon
 
+      - name: Install WABT
+        run: sudo apt-get update && sudo apt-get install -y wabt
+
+      - name: Build example WASM packages
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets/examples
+
+          wat2wasm pwa/demo/examples/fixed_ok.wat -o release-assets/examples/fixed_ok.wasm
+          wat2wasm pwa/demo/examples/fixed_error.wat -o release-assets/examples/fixed_error.wasm
+          wat2wasm pwa/demo/examples/echo_wrapped.wat -o release-assets/examples/echo_wrapped.wasm
+          wat2wasm pwa/demo/examples/advanced/fnv_report.wat -o release-assets/examples/fnv_report.wasm
+          wat2wasm pwa/demo/examples/advanced/math_double.wat -o release-assets/examples/math_double.wasm
+
+          cat > release-assets/examples/manifest_fixed_ok.json <<'JSON'
+          {
+            "version": 1,
+            "name": "fixed-ok-package",
+            "modules": [
+              { "name": "fixed_ok", "file": "fixed_ok.wasm" }
+            ]
+          }
+          JSON
+
+          cat > release-assets/examples/manifest_fixed_error.json <<'JSON'
+          {
+            "version": 1,
+            "name": "fixed-error-package",
+            "modules": [
+              { "name": "fixed_error", "file": "fixed_error.wasm" }
+            ]
+          }
+          JSON
+
+          cat > release-assets/examples/manifest_echo_wrapped.json <<'JSON'
+          {
+            "version": 1,
+            "name": "echo-wrapped-package",
+            "modules": [
+              { "name": "echo_wrapped", "file": "echo_wrapped.wasm" }
+            ]
+          }
+          JSON
+
+          cat > release-assets/examples/manifest_fnv_report.json <<'JSON'
+          {
+            "version": 1,
+            "name": "fnv-report-package",
+            "modules": [
+              { "name": "fnv_report", "file": "fnv_report.wasm" }
+            ]
+          }
+          JSON
+
+          cat > release-assets/examples/manifest_math_double.json <<'JSON'
+          {
+            "version": 1,
+            "name": "math-double-package",
+            "modules": [
+              { "name": "math_double", "file": "math_double.wasm" }
+            ]
+          }
+          JSON
+
+          cp release-assets/examples/manifest_fixed_ok.json release-assets/examples/manifest.json
+          (cd release-assets/examples && zip -q -X fixed_ok.zip manifest.json fixed_ok.wasm)
+
+          cp release-assets/examples/manifest_fixed_error.json release-assets/examples/manifest.json
+          (cd release-assets/examples && zip -q -X fixed_error.zip manifest.json fixed_error.wasm)
+
+          cp release-assets/examples/manifest_echo_wrapped.json release-assets/examples/manifest.json
+          (cd release-assets/examples && zip -q -X echo_wrapped.zip manifest.json echo_wrapped.wasm)
+
+          cp release-assets/examples/manifest_fnv_report.json release-assets/examples/manifest.json
+          (cd release-assets/examples && zip -q -X fnv_report.zip manifest.json fnv_report.wasm)
+
+          cp release-assets/examples/manifest_math_double.json release-assets/examples/manifest.json
+          (cd release-assets/examples && zip -q -X math_double.zip manifest.json math_double.wasm)
+
+          rm -f release-assets/examples/manifest.json
+          sha256sum release-assets/examples/*.zip > release-assets/examples/SHA256SUMS.txt
+
       - name: Locate APK
         id: apk_path
         run: |
@@ -76,6 +158,13 @@ jobs:
         with:
           name: release-apk
           path: ${{ steps.apk_path.outputs.path }}
+          retention-days: 30
+
+      - name: Upload example package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: example-packages
+          path: release-assets/examples/*
           retention-days: 30
 
   # ────────────────────────────────────────────────────────────────────────────
@@ -134,10 +223,19 @@ jobs:
         with:
           name: release-apk
 
+      - name: Download example package artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: example-packages
+          path: examples
+
       - name: Create GitHub Release and upload APK
         uses: softprops/action-gh-release@v2
         with:
-          files: '*.apk'
+          files: |
+            *.apk
+            examples/*.zip
+            examples/SHA256SUMS.txt
           generate_release_notes: true
           body: |
             ## MobileWasm ${{ github.ref_name }}
@@ -154,3 +252,4 @@ jobs:
             - `manifest.json` parser / validator supporting multiple independent modules
             - Global singleton `WasmEngine` with mutex-guarded load / run / hot-swap
             - Demo package bundled in assets (`sample/demo.zip`)
+            - Example WASM packages attached as release assets (`fixed_ok.zip`, `fixed_error.zip`, `echo_wrapped.zip`, `fnv_report.zip`, `math_double.zip`)

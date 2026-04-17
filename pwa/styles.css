@@ -78,6 +78,7 @@ body {
   font-size: .9rem;
   font-weight: 500;
   border: 1px solid var(--border);
+  margin-bottom: 14px;
 }
 .status-bar.info    { background: var(--surface-2); color: var(--text-muted); }
 .status-bar.success { background: #0d2218; color: #3fb950; border-color: #238636; }

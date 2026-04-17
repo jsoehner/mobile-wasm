@@ -2,6 +2,10 @@
     <string name="app_name">MobileWasm</string>
     <string name="status_idle">Tap "Load Demo Package" to install and load the sample Wasm module.</string>
     <string name="btn_load">Load Demo Package</string>
+    <string name="hint_url">Package ZIP URL (https://...)</string>
+    <string name="hint_sha">Expected SHA-256 (64 hex chars)</string>
+    <string name="btn_load_url">Install Package from URL</string>
+    <string name="btn_load_zip">Install Package from ZIP File</string>
     <string name="btn_run">Run Module</string>
     <string name="hint_json_input">JSON input (max 65 536 bytes)</string>
     <string name="label_output">Output</string>

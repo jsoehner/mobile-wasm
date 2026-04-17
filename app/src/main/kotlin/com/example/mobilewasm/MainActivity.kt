@@ -1,9 +1,12 @@
 package com.example.mobilewasm
 
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.mobilewasm.databinding.ActivityMainBinding
 import com.example.mobilewasm.manifest.WasmManifest
@@ -25,21 +28,36 @@ class MainActivity : AppCompatActivity() {
     private lateinit var engine: WasmEngine
 
     companion object {
-        private const val TAG          = "MainActivity"
-        private const val DEMO_PACKAGE = "demo"
-        private const val DEMO_ZIP     = "sample/demo.zip"
+        private const val TAG            = "MainActivity"
+        private const val DEMO_PACKAGE   = "demo"
+        private const val URL_PACKAGE    = "remote"
+        private const val FILE_PACKAGE   = "local"
+        private const val DEMO_ZIP       = "sample/demo.zip"
+        private const val SHA256_HEX_LEN = 64
+    }
+
+    private val pickZipLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        if (uri == null) {
+            setStatus("ZIP selection cancelled")
+            return@registerForActivityResult
+        }
+        installFromZipUri(uri)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Keep app content below system bars so top text is not obscured.
+        WindowCompat.setDecorFitsSystemWindows(window, true)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         store  = PackageStore.getInstance(this)
         engine = WasmEngine.getInstance()
 
-        binding.btnLoad.setOnClickListener { loadDemoPackage() }
-        binding.btnRun.setOnClickListener  { runModule()       }
+        binding.btnLoad.setOnClickListener    { loadDemoPackage() }
+        binding.btnLoadUrl.setOnClickListener { loadPackageFromUrl() }
+        binding.btnLoadZip.setOnClickListener { pickZipLauncher.launch("application/zip") }
+        binding.btnRun.setOnClickListener     { runModule() }
         binding.btnRun.isEnabled = false
     }
 
@@ -63,7 +81,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             result.fold(
-                onSuccess = { ir -> onPackageInstalled(ir.manifest) },
+                onSuccess = { ir -> onPackageInstalled(DEMO_PACKAGE, ir.manifest) },
                 onFailure = { err ->
                     setStatus("❌ ${err.message}")
                     setUiBusy(false)
@@ -72,12 +90,71 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun onPackageInstalled(manifest: WasmManifest) {
+    private fun loadPackageFromUrl() {
+        val url = binding.etUrl.text?.toString()?.trim().orEmpty()
+        val sha = binding.etSha.text?.toString()?.trim().orEmpty()
+        if (url.isBlank()) {
+            setStatus("❌ Enter a package URL")
+            return
+        }
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            setStatus("❌ URL must start with http:// or https://")
+            return
+        }
+        if (sha.length != SHA256_HEX_LEN || !sha.matches(Regex("^[0-9a-fA-F]{64}$"))) {
+            setStatus("❌ SHA-256 must be 64 hex characters")
+            return
+        }
+
+        lifecycleScope.launch {
+            setUiBusy(true, "Downloading and installing package…")
+            val result = withContext(Dispatchers.IO) {
+                store.getInstaller().installFromUrl(
+                    url = url,
+                    expectedSha256 = sha,
+                    packageName = URL_PACKAGE
+                )
+            }
+            result.fold(
+                onSuccess = { ir -> onPackageInstalled(URL_PACKAGE, ir.manifest) },
+                onFailure = {
+                    setStatus("❌ URL install failed: ${it.message}")
+                    setUiBusy(false)
+                }
+            )
+        }
+    }
+
+    private fun installFromZipUri(uri: Uri) {
+        lifecycleScope.launch {
+            setUiBusy(true, "Installing package from ZIP…")
+            val result = withContext(Dispatchers.IO) {
+                try {
+                    val input = contentResolver.openInputStream(uri)
+                        ?: return@withContext Result.failure(IllegalArgumentException("Unable to read ZIP file"))
+                    input.use {
+                        store.getInstaller().installFromStream(it, FILE_PACKAGE)
+                    }
+                } catch (e: Exception) {
+                    Result.failure(e)
+                }
+            }
+            result.fold(
+                onSuccess = { ir -> onPackageInstalled(FILE_PACKAGE, ir.manifest) },
+                onFailure = {
+                    setStatus("❌ ZIP install failed: ${it.message}")
+                    setUiBusy(false)
+                }
+            )
+        }
+    }
+
+    private suspend fun onPackageInstalled(packageName: String, manifest: WasmManifest) {
         val firstModule = manifest.modules.first()
         setStatus("Package '${manifest.name}' installed — loading module '${firstModule.name}'…")
 
         val loadResult = withContext(Dispatchers.IO) {
-            val bytes = store.getModuleBytes(DEMO_PACKAGE, firstModule.name)
+            val bytes = store.getModuleBytes(packageName, firstModule.name)
             if (bytes == null) {
                 Result.failure<Unit>(IllegalStateException("Wasm bytes not found in store"))
             } else {
@@ -103,8 +180,14 @@ class MainActivity : AppCompatActivity() {
             setUiBusy(true, "Running…")
             val result = withContext(Dispatchers.IO) { engine.run(json) }
             result.fold(
-                onSuccess  = { binding.tvOutput.text = it },
-                onFailure  = { binding.tvOutput.text = "❌ ${it.message}" }
+                onSuccess  = {
+                    binding.tvOutput.text = it
+                    setStatus("✅ Run completed")
+                },
+                onFailure  = {
+                    binding.tvOutput.text = "❌ ${it.message}"
+                    setStatus("❌ Run error: ${it.message}")
+                }
             )
             setUiBusy(false)
         }
@@ -120,6 +203,8 @@ class MainActivity : AppCompatActivity() {
         if (status.isNotEmpty()) setStatus(status)
         binding.progressBar.visibility = if (busy) View.VISIBLE else View.GONE
         binding.btnLoad.isEnabled = !busy
+        binding.btnLoadUrl.isEnabled = !busy
+        binding.btnLoadZip.isEnabled = !busy
         if (!busy && engine.activeModuleName == null) binding.btnRun.isEnabled = false
     }
 }

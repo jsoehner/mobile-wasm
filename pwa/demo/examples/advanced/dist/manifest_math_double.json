@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "name": "math-double-package",
+  "modules": [
+    { "name": "math_double", "file": "math_double.wasm" }
+  ]
+}

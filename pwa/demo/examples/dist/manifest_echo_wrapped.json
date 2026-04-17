@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "name": "echo-wrapped-package",
+  "modules": [
+    { "name": "echo_wrapped", "file": "echo_wrapped.wasm" }
+  ]
+}
