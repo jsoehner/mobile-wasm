@@ -1,5 +1,6 @@
 import java.net.HttpURLConnection
 import java.net.URI
+import java.security.MessageDigest
 import java.util.zip.ZipFile
 
 plugins {
@@ -9,6 +10,7 @@ plugins {
 
 val wasmedgeVersion = "0.14.1"
 val wasmedgeDir = layout.buildDirectory.dir("wasmedge").get().asFile
+val wasmedgeSha256 = providers.gradleProperty("wasmedgeSha256").orNull
 
 private val WASM_PAGE_SIZE = 65536
 
@@ -155,6 +157,18 @@ tasks.register("downloadWasmedge") {
         }
         conn.inputStream.use { input -> archive.outputStream().use { input.copyTo(it) } }
 
+        if (!wasmedgeSha256.isNullOrBlank()) {
+            val actualSha256 = MessageDigest.getInstance("SHA-256")
+                .digest(archive.readBytes())
+                .joinToString("") { "%02x".format(it) }
+            check(actualSha256.equals(wasmedgeSha256, ignoreCase = true)) {
+                "WasmEdge archive SHA-256 mismatch. expected=$wasmedgeSha256 actual=$actualSha256"
+            }
+            logger.lifecycle("WasmEdge archive SHA-256 verified")
+        } else {
+            logger.warn("wasmedgeSha256 not set; skipping archive integrity verification")
+        }
+
         logger.lifecycle("Extracting WasmEdge prebuilt to ${wasmedgeDir}…")
         wasmedgeDir.mkdirs()
         exec {
@@ -211,6 +225,7 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.1.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
             abiFilters += "arm64-v8a"
@@ -309,4 +324,8 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    androidTestImplementation("androidx.test.uiautomator:uiautomator:2.3.0")
 }

@@ -50,6 +50,13 @@ struct EngineState {
 // ─────────────────────────────────────────────────────────────────────────────
 extern "C" {
 
+static void ThrowRuntimeException(JNIEnv *env, const char *msg) {
+    jclass exClass = env->FindClass("java/lang/RuntimeException");
+    if (exClass != nullptr) {
+        env->ThrowNew(exClass, msg);
+    }
+}
+
 /**
  * Allocate a new engine. Returns an opaque handle (pointer cast to jlong),
  * or 0 on failure.
@@ -139,32 +146,50 @@ Java_com_example_mobilewasm_WasmEngine_nativeLoad(JNIEnv *env, jobject /*thiz*/,
 JNIEXPORT jstring JNICALL
 Java_com_example_mobilewasm_WasmEngine_nativeRun(JNIEnv *env, jobject /*thiz*/,
                                                  jlong handle, jstring jsonInput) {
-    auto err = [&](const char *msg) -> jstring {
-        std::string s = std::string("{\"error\":\"") + msg + "\"}";
-        return env->NewStringUTF(s.c_str());
-    };
-
-    if (handle == 0L) return err("engine not initialized");
+    if (handle == 0L) {
+        ThrowRuntimeException(env, "engine not initialized");
+        return nullptr;
+    }
     auto *state = reinterpret_cast<EngineState *>(handle);
-    if (!state->loaded) return err("no module loaded");
+    if (!state->loaded) {
+        ThrowRuntimeException(env, "no module loaded");
+        return nullptr;
+    }
+
+    if (jsonInput == nullptr) {
+        ThrowRuntimeException(env, "null input");
+        return nullptr;
+    }
 
     // ── Obtain UTF-8 JSON input ──
     const char *inputCStr = env->GetStringUTFChars(jsonInput, nullptr);
-    if (!inputCStr) return err("null input");
+    if (!inputCStr) {
+        ThrowRuntimeException(env, "failed to read input string");
+        return nullptr;
+    }
     std::string input(inputCStr);
     env->ReleaseStringUTFChars(jsonInput, inputCStr);
 
-    if (input.size() > WASM_MAX_INPUT) return err("input exceeds 65536 bytes");
+    if (input.size() > WASM_MAX_INPUT) {
+        ThrowRuntimeException(env, "input exceeds 65536 bytes");
+        return nullptr;
+    }
 
     // ── Locate the active module instance ──
     const WasmEdge_ModuleInstanceContext *modInst = WasmEdge_VMGetActiveModule(state->vm);
-    if (!modInst) return err("module instance not found");
+    if (!modInst) {
+        ThrowRuntimeException(env, "module instance not found");
+        return nullptr;
+    }
 
     WasmEdge_String                memName = WasmEdge_StringCreateByCString("memory");
     WasmEdge_MemoryInstanceContext *memInst =
             WasmEdge_ModuleInstanceFindMemory(modInst, memName);
     WasmEdge_StringDelete(memName);
-    if (!memInst) return err("memory not exported by module");
+    if (!memInst) {
+        ThrowRuntimeException(env, "memory not exported by module");
+        return nullptr;
+    }
 
     // ── Write JSON input to wasm memory ──
     WasmEdge_Result wRes = WasmEdge_MemoryInstanceSetData(
@@ -172,7 +197,10 @@ Java_com_example_mobilewasm_WasmEngine_nativeRun(JNIEnv *env, jobject /*thiz*/,
             reinterpret_cast<const uint8_t *>(input.data()),
             IN_OFFSET,
             static_cast<uint32_t>(input.size()));
-    if (!WasmEdge_ResultOK(wRes)) return err("failed to write input to wasm memory");
+    if (!WasmEdge_ResultOK(wRes)) {
+        ThrowRuntimeException(env, "failed to write input to wasm memory");
+        return nullptr;
+    }
 
     // ── Call run(inPtr, inLen, outPtr, outCap) → outLen ──
     WasmEdge_Value params[4] = {
@@ -188,12 +216,14 @@ Java_com_example_mobilewasm_WasmEngine_nativeRun(JNIEnv *env, jobject /*thiz*/,
 
     if (!WasmEdge_ResultOK(res)) {
         LOGE("Execute failed: %s", WasmEdge_ResultGetMessage(res));
-        return err("wasm execute failed");
+        ThrowRuntimeException(env, "wasm execute failed");
+        return nullptr;
     }
 
     int32_t outLen = WasmEdge_ValueGetI32(results[0]);
     if (outLen < 0 || static_cast<uint32_t>(outLen) > OUT_CAP) {
-        return err("module returned invalid output length");
+        ThrowRuntimeException(env, "module returned invalid output length");
+        return nullptr;
     }
     if (outLen == 0) return env->NewStringUTF("{}");
 
@@ -201,7 +231,10 @@ Java_com_example_mobilewasm_WasmEngine_nativeRun(JNIEnv *env, jobject /*thiz*/,
     std::vector<uint8_t> outBuf(static_cast<size_t>(outLen));
     wRes = WasmEdge_MemoryInstanceGetData(
             memInst, outBuf.data(), OUT_OFFSET, static_cast<uint32_t>(outLen));
-    if (!WasmEdge_ResultOK(wRes)) return err("failed to read output from wasm memory");
+    if (!WasmEdge_ResultOK(wRes)) {
+        ThrowRuntimeException(env, "failed to read output from wasm memory");
+        return nullptr;
+    }
 
     return env->NewStringUTF(
         std::string(reinterpret_cast<char *>(outBuf.data()),

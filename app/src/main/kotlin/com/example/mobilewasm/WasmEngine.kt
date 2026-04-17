@@ -1,6 +1,7 @@
 package com.example.mobilewasm
 
 import android.util.Log
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -49,12 +50,16 @@ class WasmEngine private constructor() {
      */
     suspend fun load(moduleName: String, wasmBytes: ByteArray): Result<Unit> =
         mutex.withLock {
+            if (nativeHandle == 0L) {
+                return Result.failure(IllegalStateException("Engine is closed"))
+            }
             val code = nativeLoad(nativeHandle, wasmBytes)
             if (code == 0) {
                 activeModule = moduleName
                 Log.i(TAG, "Module '$moduleName' loaded (${wasmBytes.size} bytes)")
                 Result.success(Unit)
             } else {
+                activeModule = null
                 Result.failure(RuntimeException("nativeLoad returned error code $code"))
             }
         }
@@ -68,7 +73,10 @@ class WasmEngine private constructor() {
             if (activeModule == null) {
                 return Result.failure(IllegalStateException("No module is loaded"))
             }
-            Result.success(nativeRun(nativeHandle, jsonInput))
+            if (nativeHandle == 0L) {
+                return Result.failure(IllegalStateException("Engine is closed"))
+            }
+            runCatching { nativeRun(nativeHandle, jsonInput) }
         }
 
     /** Returns the name of the currently active module, or `null`. */
@@ -76,12 +84,16 @@ class WasmEngine private constructor() {
 
     /** Release the native engine. After this call the singleton is invalid. */
     fun close() {
-        val h = nativeHandle
-        nativeHandle = 0L
-        activeModule = null
-        instance     = null
-        if (h != 0L) nativeClose(h)
-        Log.i(TAG, "WasmEngine closed")
+        runBlocking {
+            mutex.withLock {
+                val h = nativeHandle
+                nativeHandle = 0L
+                activeModule = null
+                instance = null
+                if (h != 0L) nativeClose(h)
+                Log.i(TAG, "WasmEngine closed")
+            }
+        }
     }
 
     // ──────────────────────────────────────────────────────────────────────────

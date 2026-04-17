@@ -4,6 +4,7 @@ import android.util.Log
 import com.example.mobilewasm.manifest.ManifestParser
 import com.example.mobilewasm.manifest.ManifestValidator
 import com.example.mobilewasm.manifest.WasmManifest
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStream
 import java.net.HttpURLConnection
@@ -29,7 +30,12 @@ class PackageInstaller(private val installDir: File) {
         private const val TAG              = "PackageInstaller"
         private const val MANIFEST_NAME    = "manifest.json"
         private const val MAX_ENTRY_BYTES  = 50L * 1024 * 1024   // 50 MiB per file
+        private const val MAX_ZIP_BYTES    = 100L * 1024 * 1024  // 100 MiB compressed download
+        private const val MAX_TOTAL_BYTES  = 150L * 1024 * 1024  // 150 MiB extracted payload
+        private const val MAX_ENTRIES      = 2048
         private const val BUFFER_SIZE      = 8192
+        private const val CONNECT_TIMEOUT_MS = 15_000
+        private const val READ_TIMEOUT_MS    = 30_000
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -70,16 +76,37 @@ class PackageInstaller(private val installDir: File) {
     private fun downloadBytes(urlString: String): ByteArray {
         var conn = URL(urlString).openConnection() as HttpURLConnection
         conn.instanceFollowRedirects = true
+        conn.connectTimeout = CONNECT_TIMEOUT_MS
+        conn.readTimeout = READ_TIMEOUT_MS
         // Manually follow up to 5 redirects
         repeat(5) {
             if (conn.responseCode in 300..399) {
                 val location = conn.getHeaderField("Location")
+                    ?: throw IllegalArgumentException("Redirect response missing Location header")
                 conn.disconnect()
                 conn = URL(location).openConnection() as HttpURLConnection
                 conn.instanceFollowRedirects = true
+                conn.connectTimeout = CONNECT_TIMEOUT_MS
+                conn.readTimeout = READ_TIMEOUT_MS
             }
         }
-        return conn.inputStream.use { it.readBytes() }
+        val code = conn.responseCode
+        if (code !in 200..299) {
+            throw IllegalStateException("HTTP request failed with status $code")
+        }
+
+        val out = ByteArrayOutputStream()
+        conn.inputStream.use { input ->
+            val buf = ByteArray(BUFFER_SIZE)
+            var read: Int
+            while (input.read(buf).also { read = it } != -1) {
+                out.write(buf, 0, read)
+                if (out.size().toLong() > MAX_ZIP_BYTES) {
+                    throw IllegalStateException("Downloaded ZIP exceeds $MAX_ZIP_BYTES bytes")
+                }
+            }
+        }
+        return out.toByteArray()
     }
 
     private fun verifySha256(data: ByteArray, expectedHex: String) {
@@ -130,9 +157,16 @@ class PackageInstaller(private val installDir: File) {
      */
     private fun extractZipSafe(stream: InputStream, destDir: File) {
         val canonicalDest = destDir.canonicalPath + File.separator
+        var entryCount = 0
+        var totalWritten = 0L
         ZipInputStream(stream).use { zip ->
             var entry = zip.nextEntry
             while (entry != null) {
+                entryCount += 1
+                if (entryCount > MAX_ENTRIES) {
+                    throw SecurityException("ZIP contains too many entries (>$MAX_ENTRIES)")
+                }
+
                 val target = File(destDir, entry.name)
 
                 // ZIP-slip guard
@@ -150,9 +184,15 @@ class PackageInstaller(private val installDir: File) {
                         var read: Int
                         while (zip.read(buf).also { read = it } != -1) {
                             written += read
+                            totalWritten += read
                             if (written > MAX_ENTRY_BYTES) {
                                 throw SecurityException(
                                     "Entry '${entry.name}' exceeds $MAX_ENTRY_BYTES byte limit"
+                                )
+                            }
+                            if (totalWritten > MAX_TOTAL_BYTES) {
+                                throw SecurityException(
+                                    "Extracted payload exceeds $MAX_TOTAL_BYTES byte limit"
                                 )
                             }
                             out.write(buf, 0, read)

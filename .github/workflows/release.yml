@@ -197,15 +197,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           TAG="${{ steps.version.outputs.version }}"
-          # If the tag already points to the current commit, skip (no-op).
-          # Otherwise create/update it so the release job picks up the latest build.
+          # Tags are immutable release identifiers. If it already exists, skip.
           CURRENT_SHA=$(git rev-parse HEAD)
           EXISTING_SHA=$(git rev-list -n 1 "$TAG" 2>/dev/null || true)
-          if [ "$EXISTING_SHA" = "$CURRENT_SHA" ]; then
-            echo "Tag $TAG already points to $CURRENT_SHA – nothing to do."
+          if [ -n "$EXISTING_SHA" ]; then
+            echo "Tag $TAG already exists at $EXISTING_SHA – skipping tag creation."
           else
-            git tag -f "$TAG"
-            git push origin "$TAG" --force
+            git tag "$TAG"
+            git push origin "$TAG"
           fi
 
   # ────────────────────────────────────────────────────────────────────────────
@@ -243,7 +242,7 @@ jobs:
             ### Installation
             Download the `.apk` below and sideload it:
             ```
-            adb install MobileWasm-release.apk
+              adb install app-release.apk
             ```
 
             ### What's included
