@@ -144,18 +144,59 @@ tasks.register("downloadWasmedge") {
         logger.lifecycle("Downloading WasmEdge $wasmedgeVersion for Android arm64…")
         archive.parentFile.mkdirs()
 
-        var conn = URI(archiveUrl).toURL().openConnection() as HttpURLConnection
-        conn.instanceFollowRedirects = true
-        // Follow up to 5 redirects manually (some releases redirect)
-        repeat(5) {
-            if (conn.responseCode in 300..399) {
-                val loc = conn.getHeaderField("Location")
-                conn.disconnect()
-                conn = URI(loc).toURL().openConnection() as HttpURLConnection
-                conn.instanceFollowRedirects = true
+        val maxAttempts = 5
+        var attempt = 1
+        var lastError: Exception? = null
+        while (attempt <= maxAttempts) {
+            var conn: HttpURLConnection? = null
+            try {
+                archive.delete()
+                conn = URI(archiveUrl).toURL().openConnection() as HttpURLConnection
+                conn.instanceFollowRedirects = false
+                conn.connectTimeout = 15_000
+                conn.readTimeout = 120_000
+                conn.setRequestProperty("User-Agent", "mobile-wasm-ci")
+
+                // Follow up to 5 redirects manually (release assets often redirect).
+                repeat(5) {
+                    if (conn!!.responseCode in 300..399) {
+                        val loc = conn!!.getHeaderField("Location")
+                            ?: error("Redirect missing Location header")
+                        conn!!.disconnect()
+                        conn = URI(loc).toURL().openConnection() as HttpURLConnection
+                        conn!!.instanceFollowRedirects = false
+                        conn!!.connectTimeout = 15_000
+                        conn!!.readTimeout = 120_000
+                        conn!!.setRequestProperty("User-Agent", "mobile-wasm-ci")
+                    }
+                }
+
+                val code = conn!!.responseCode
+                check(code in 200..299) {
+                    "WasmEdge download failed with HTTP $code from $archiveUrl"
+                }
+
+                conn!!.inputStream.use { input -> archive.outputStream().use { input.copyTo(it) } }
+                lastError = null
+                break
+            } catch (e: Exception) {
+                lastError = e
+                if (attempt == maxAttempts) break
+                val delaySec = attempt * 5
+                logger.warn(
+                    "WasmEdge download attempt $attempt/$maxAttempts failed: ${e.message}. " +
+                    "Retrying in ${delaySec}s…"
+                )
+                Thread.sleep(delaySec * 1000L)
+            } finally {
+                conn?.disconnect()
             }
+            attempt += 1
         }
-        conn.inputStream.use { input -> archive.outputStream().use { input.copyTo(it) } }
+
+        if (lastError != null) {
+            throw lastError
+        }
 
         if (!wasmedgeSha256.isNullOrBlank()) {
             val actualSha256 = MessageDigest.getInstance("SHA-256")
