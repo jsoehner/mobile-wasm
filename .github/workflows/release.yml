@@ -197,12 +197,13 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           TAG="${{ steps.version.outputs.version }}"
-          # Tags are immutable release identifiers. If it already exists, skip.
-          CURRENT_SHA=$(git rev-parse HEAD)
-          EXISTING_SHA=$(git rev-list -n 1 "$TAG" 2>/dev/null || true)
-          if [ -n "$EXISTING_SHA" ]; then
-            echo "Tag $TAG already exists at $EXISTING_SHA – skipping tag creation."
+          # Tags are immutable release identifiers. If the remote already has
+          # this tag, do not fail the job.
+          REMOTE_SHA=$(git ls-remote --tags origin "refs/tags/$TAG" | awk '{print $1}')
+          if [ -n "$REMOTE_SHA" ]; then
+            echo "Tag $TAG already exists on origin at $REMOTE_SHA - skipping tag creation."
           else
+            git fetch --tags --force
             git tag "$TAG"
             git push origin "$TAG"
           fi
