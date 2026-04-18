@@ -9,6 +9,10 @@ Expected release assets:
 - echo_wrapped.zip
 - fnv_report.zip
 - math_double.zip
+- math_sum.zip
+- math_subtract.zip
+- math_multiply.zip
+- math_divide.zip
 - SHA256SUMS.txt
 
 Once a tagged release is published, the assets are available from the repository Releases page:

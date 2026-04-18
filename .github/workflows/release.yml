@@ -76,6 +76,10 @@ jobs:
           wat2wasm pwa/demo/examples/echo_wrapped.wat -o release-assets/examples/echo_wrapped.wasm
           wat2wasm pwa/demo/examples/advanced/fnv_report.wat -o release-assets/examples/fnv_report.wasm
           wat2wasm pwa/demo/examples/advanced/math_double.wat -o release-assets/examples/math_double.wasm
+          wat2wasm pwa/demo/examples/advanced/math_sum.wat -o release-assets/examples/math_sum.wasm
+          wat2wasm pwa/demo/examples/advanced/math_subtract.wat -o release-assets/examples/math_subtract.wasm
+          wat2wasm pwa/demo/examples/advanced/math_multiply.wat -o release-assets/examples/math_multiply.wasm
+          wat2wasm pwa/demo/examples/advanced/math_divide.wat -o release-assets/examples/math_divide.wasm
 
           cat > release-assets/examples/manifest_fixed_ok.json <<'JSON'
           {
@@ -127,6 +131,46 @@ jobs:
           }
           JSON
 
+          cat > release-assets/examples/manifest_math_sum.json <<'JSON'
+          {
+            "version": 1,
+            "name": "math-sum-package",
+            "modules": [
+              { "name": "math_sum", "file": "math_sum.wasm" }
+            ]
+          }
+          JSON
+
+          cat > release-assets/examples/manifest_math_subtract.json <<'JSON'
+          {
+            "version": 1,
+            "name": "math-subtract-package",
+            "modules": [
+              { "name": "math_subtract", "file": "math_subtract.wasm" }
+            ]
+          }
+          JSON
+
+          cat > release-assets/examples/manifest_math_multiply.json <<'JSON'
+          {
+            "version": 1,
+            "name": "math-multiply-package",
+            "modules": [
+              { "name": "math_multiply", "file": "math_multiply.wasm" }
+            ]
+          }
+          JSON
+
+          cat > release-assets/examples/manifest_math_divide.json <<'JSON'
+          {
+            "version": 1,
+            "name": "math-divide-package",
+            "modules": [
+              { "name": "math_divide", "file": "math_divide.wasm" }
+            ]
+          }
+          JSON
+
           cp release-assets/examples/manifest_fixed_ok.json release-assets/examples/manifest.json
           (cd release-assets/examples && zip -q -X fixed_ok.zip manifest.json fixed_ok.wasm)
 
@@ -141,6 +185,18 @@ jobs:
 
           cp release-assets/examples/manifest_math_double.json release-assets/examples/manifest.json
           (cd release-assets/examples && zip -q -X math_double.zip manifest.json math_double.wasm)
+
+          cp release-assets/examples/manifest_math_sum.json release-assets/examples/manifest.json
+          (cd release-assets/examples && zip -q -X math_sum.zip manifest.json math_sum.wasm)
+
+          cp release-assets/examples/manifest_math_subtract.json release-assets/examples/manifest.json
+          (cd release-assets/examples && zip -q -X math_subtract.zip manifest.json math_subtract.wasm)
+
+          cp release-assets/examples/manifest_math_multiply.json release-assets/examples/manifest.json
+          (cd release-assets/examples && zip -q -X math_multiply.zip manifest.json math_multiply.wasm)
+
+          cp release-assets/examples/manifest_math_divide.json release-assets/examples/manifest.json
+          (cd release-assets/examples && zip -q -X math_divide.zip manifest.json math_divide.wasm)
 
           rm -f release-assets/examples/manifest.json
           sha256sum release-assets/examples/*.zip > release-assets/examples/SHA256SUMS.txt
@@ -257,4 +313,4 @@ jobs:
             - `manifest.json` parser / validator supporting multiple independent modules
             - Global singleton `WasmEngine` with mutex-guarded load / run / hot-swap
             - Demo package bundled in assets (`sample/demo.zip`)
-            - Example WASM packages attached as release assets (`fixed_ok.zip`, `fixed_error.zip`, `echo_wrapped.zip`, `fnv_report.zip`, `math_double.zip`)
+            - Example WASM packages attached as release assets (`fixed_ok.zip`, `fixed_error.zip`, `echo_wrapped.zip`, `fnv_report.zip`, `math_double.zip`, `math_sum.zip`, `math_subtract.zip`, `math_multiply.zip`, `math_divide.zip`)

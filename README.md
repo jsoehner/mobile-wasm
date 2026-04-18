@@ -4,6 +4,13 @@ An Android application **and** companion Progressive Web App (PWA) that run WebA
 in a sandboxed environment — on-device via [WasmEdge](https://wasmedge.org/) (Android) or
 directly in the browser via the WebAssembly JavaScript API (PWA).
 
+## Current Update
+
+- Added a new advanced math WASM example set for sum, subtract, multiply, and divide with JSON input/output.
+- Bumped the Android artifact version to `1.2.0` so GitHub Releases can publish a fresh APK and matching example assets.
+- Extended the release workflow to package and attach the new math example ZIPs alongside the APK.
+- Previously fixed CI release issues so the workflow skips tag push collisions, creates/releases the APK from the same `main` run, and retries transient WasmEdge download failures.
+
 ## Progressive Web App
 
 The `pwa/` directory contains a self-contained PWA that mirrors the Android app's Wasm execution
