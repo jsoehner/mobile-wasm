@@ -20,7 +20,7 @@ class WasmEngine private constructor() {
 
     private val mutex          = Mutex()
     private var nativeHandle   = 0L
-    private var activeModule   : String? = null
+    @Volatile private var activeModule   : String? = null
 
     companion object {
         private const val TAG = "WasmEngine"

@@ -31,10 +31,11 @@ const PRECACHE_SUFFIXES = new Set(
 /* ── Install: pre-cache app shell ──────────────────────────────── */
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(PRECACHE_ASSETS)),
+    Promise.all([
+      caches.open(CACHE_NAME).then(cache => cache.addAll(PRECACHE_ASSETS)),
+      self.skipWaiting(),
+    ]),
   );
-  // Activate immediately without waiting for existing tabs to close.
-  self.skipWaiting();
 });
 
 /* ── Activate: remove stale caches ─────────────────────────────── */
@@ -66,7 +67,7 @@ self.addEventListener('fetch', event => {
 
       return fetch(request).then(response => {
         // Cache successful responses for app-shell assets.
-        if (response.ok && PRECACHE_SUFFIXES.has(url.pathname.split('/').pop())) {
+        if (response.ok && PRECACHE_SUFFIXES.has(url.pathname.replace(/^\//, ''))) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
         }

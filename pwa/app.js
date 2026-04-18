@@ -267,6 +267,10 @@ el.btnLoadFile.addEventListener('click', async () => {
 el.btnFetchUrl.addEventListener('click', async () => {
   const url = el.inputUrl.value.trim();
   if (!url) { setStatus('Please enter a URL.', 'error'); return; }
+  if (!url.startsWith('https://')) {
+    setStatus('Only HTTPS URLs are permitted.', 'error');
+    return;
+  }
 
   el.btnFetchUrl.disabled = true;
   setStatus('Fetching…', 'loading');

@@ -71,7 +71,9 @@ class MainActivity : AppCompatActivity() {
                 try {
                     // Copy demo.zip from assets to a temp file for streaming
                     val tempZip = File(cacheDir, "demo.zip")
-                    assets.open(DEMO_ZIP).use { it.copyTo(tempZip.outputStream()) }
+                    assets.open(DEMO_ZIP).use { input ->
+                        tempZip.outputStream().use { output -> input.copyTo(output) }
+                    }
 
                     store.getInstaller().installFromStream(tempZip.inputStream(), DEMO_PACKAGE)
                 } catch (e: Exception) {
@@ -97,8 +99,8 @@ class MainActivity : AppCompatActivity() {
             setStatus("❌ Enter a package URL")
             return
         }
-        if (!url.startsWith("http://") && !url.startsWith("https://")) {
-            setStatus("❌ URL must start with http:// or https://")
+        if (!url.startsWith("https://")) {
+            setStatus("❌ URL must start with https://")
             return
         }
         if (sha.length != SHA256_HEX_LEN || !sha.matches(Regex("^[0-9a-fA-F]{64}$"))) {

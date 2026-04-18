@@ -6,6 +6,41 @@
 #include <android/log.h>
 #include <wasmedge/wasmedge.h>
 
+// Sanitise a raw byte buffer to well-formed UTF-8, replacing any invalid or
+// incomplete sequences with the UTF-8 encoding of U+FFFD (0xEF 0xBF 0xBD).
+// This ensures the result is safe to pass to JNIEnv::NewStringUTF (MUTF-8).
+static std::string sanitise_utf8(const uint8_t *data, size_t len) {
+    static const uint8_t kRepl[3] = { 0xEF, 0xBF, 0xBD };
+    std::string out;
+    out.reserve(len);
+    for (size_t i = 0; i < len; ) {
+        uint8_t b = data[i];
+        int seqLen;
+        if      (b <= 0x7F) { seqLen = 1; }
+        else if ((b & 0xE0) == 0xC0) { seqLen = 2; }
+        else if ((b & 0xF0) == 0xE0) { seqLen = 3; }
+        else if ((b & 0xF8) == 0xF0) { seqLen = 4; }
+        else { out.append(reinterpret_cast<const char *>(kRepl), 3); ++i; continue; }
+
+        if (i + seqLen > len) {
+            out.append(reinterpret_cast<const char *>(kRepl), 3);
+            break;
+        }
+        // Validate continuation bytes.
+        bool valid = true;
+        for (int k = 1; k < seqLen; ++k) {
+            if ((data[i + k] & 0xC0) != 0x80) { valid = false; break; }
+        }
+        if (valid) {
+            out.append(reinterpret_cast<const char *>(data + i), seqLen);
+        } else {
+            out.append(reinterpret_cast<const char *>(kRepl), 3);
+        }
+        i += seqLen;
+    }
+    return out;
+}
+
 #define TAG        "WasmEngine"
 #define LOGI(...)  __android_log_print(ANDROID_LOG_INFO,  TAG, __VA_ARGS__)
 #define LOGE(...)  __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
@@ -236,9 +271,11 @@ Java_com_example_mobilewasm_WasmEngine_nativeRun(JNIEnv *env, jobject /*thiz*/,
         return nullptr;
     }
 
-    return env->NewStringUTF(
-        std::string(reinterpret_cast<char *>(outBuf.data()),
-                    static_cast<size_t>(outLen)).c_str());
+    // Sanitise to well-formed UTF-8 before handing to the JVM.
+    // NewStringUTF requires MUTF-8; raw Wasm output may contain invalid sequences
+    // that would otherwise cause a JNI crash or silent string truncation.
+    const std::string safe = sanitise_utf8(outBuf.data(), static_cast<size_t>(outLen));
+    return env->NewStringUTF(safe.c_str());
 }
 
 } // extern "C"

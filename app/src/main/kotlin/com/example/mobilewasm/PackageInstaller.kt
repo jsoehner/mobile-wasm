@@ -74,39 +74,49 @@ class PackageInstaller(private val installDir: File) {
     // ──────────────────────────────────────────────────────────────────────────
 
     private fun downloadBytes(urlString: String): ByteArray {
+        if (!urlString.startsWith("https://", ignoreCase = true)) {
+            throw IllegalArgumentException("Only HTTPS URLs are permitted for package downloads")
+        }
         var conn = URL(urlString).openConnection() as HttpURLConnection
-        conn.instanceFollowRedirects = true
+        conn.instanceFollowRedirects = false
         conn.connectTimeout = CONNECT_TIMEOUT_MS
         conn.readTimeout = READ_TIMEOUT_MS
-        // Manually follow up to 5 redirects
+        // Manually follow up to 5 redirects, HTTPS-only
         repeat(5) {
             if (conn.responseCode in 300..399) {
                 val location = conn.getHeaderField("Location")
                     ?: throw IllegalArgumentException("Redirect response missing Location header")
+                if (!location.startsWith("https://", ignoreCase = true)) {
+                    throw SecurityException("Redirect to non-HTTPS URL blocked: $location")
+                }
                 conn.disconnect()
                 conn = URL(location).openConnection() as HttpURLConnection
-                conn.instanceFollowRedirects = true
+                conn.instanceFollowRedirects = false
                 conn.connectTimeout = CONNECT_TIMEOUT_MS
                 conn.readTimeout = READ_TIMEOUT_MS
             }
         }
-        val code = conn.responseCode
-        if (code !in 200..299) {
-            throw IllegalStateException("HTTP request failed with status $code")
-        }
+        try {
+            val code = conn.responseCode
+            if (code !in 200..299) {
+                throw IllegalStateException("HTTP request failed with status $code")
+            }
 
-        val out = ByteArrayOutputStream()
-        conn.inputStream.use { input ->
-            val buf = ByteArray(BUFFER_SIZE)
-            var read: Int
-            while (input.read(buf).also { read = it } != -1) {
-                out.write(buf, 0, read)
-                if (out.size().toLong() > MAX_ZIP_BYTES) {
-                    throw IllegalStateException("Downloaded ZIP exceeds $MAX_ZIP_BYTES bytes")
+            val out = ByteArrayOutputStream()
+            conn.inputStream.use { input ->
+                val buf = ByteArray(BUFFER_SIZE)
+                var read: Int
+                while (input.read(buf).also { read = it } != -1) {
+                    out.write(buf, 0, read)
+                    if (out.size().toLong() > MAX_ZIP_BYTES) {
+                        throw IllegalStateException("Downloaded ZIP exceeds $MAX_ZIP_BYTES bytes")
+                    }
                 }
             }
+            return out.toByteArray()
+        } finally {
+            conn.disconnect()
         }
-        return out.toByteArray()
     }
 
     private fun verifySha256(data: ByteArray, expectedHex: String) {
