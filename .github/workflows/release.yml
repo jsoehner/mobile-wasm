@@ -3,7 +3,6 @@ name: Build & Release APK
 on:
   push:
     branches: [ main ]
-    tags:     [ 'v*.*.*' ]
   pull_request:
     branches: [ main ]
 
@@ -173,6 +172,8 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
+    outputs:
+      version_tag: ${{ steps.version.outputs.version }}
     permissions:
       contents: write
 
@@ -211,8 +212,10 @@ jobs:
   # ────────────────────────────────────────────────────────────────────────────
   release:
     name: Create GitHub Release
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs:
+      - build
+      - tag
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -232,13 +235,15 @@ jobs:
       - name: Create GitHub Release and upload APK
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ needs.tag.outputs.version_tag }}
+          name: MobileWasm ${{ needs.tag.outputs.version_tag }}
           files: |
             *.apk
             examples/*.zip
             examples/SHA256SUMS.txt
           generate_release_notes: true
           body: |
-            ## MobileWasm ${{ github.ref_name }}
+            ## MobileWasm ${{ needs.tag.outputs.version_tag }}
 
             ### Installation
             Download the `.apk` below and sideload it:
