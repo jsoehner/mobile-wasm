@@ -83,7 +83,8 @@ class PackageInstaller(private val installDir: File) {
         conn.readTimeout = READ_TIMEOUT_MS
         // Manually follow up to 5 redirects, HTTPS-only
         repeat(5) {
-            if (conn.responseCode in 300..399) {
+            val code = conn.responseCode
+            if (code in 300..399) {
                 val location = conn.getHeaderField("Location")
                     ?: throw IllegalArgumentException("Redirect response missing Location header")
                 if (!location.startsWith("https://", ignoreCase = true)) {
@@ -94,6 +95,9 @@ class PackageInstaller(private val installDir: File) {
                 conn.instanceFollowRedirects = false
                 conn.connectTimeout = CONNECT_TIMEOUT_MS
                 conn.readTimeout = READ_TIMEOUT_MS
+                Log.i(TAG, "Following redirect to $location")
+            } else {
+                return@repeat
             }
         }
         try {

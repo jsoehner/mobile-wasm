@@ -59,6 +59,15 @@ class MainActivity : AppCompatActivity() {
         binding.btnLoadZip.setOnClickListener { pickZipLauncher.launch("application/zip") }
         binding.btnRun.setOnClickListener     { runModule() }
         binding.btnRun.isEnabled = false
+
+        // Long click to copy output
+        binding.tvOutput.setOnLongClickListener {
+            val text = binding.tvOutput.text.toString()
+            if (text != "—") {
+                copyToClipboard(text)
+                true
+            } else false
+        }
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -178,21 +187,39 @@ class MainActivity : AppCompatActivity() {
 
     private fun runModule() {
         val json = binding.etInput.text.toString().ifBlank { "{}" }
+        
+        // Simple JSON validation
+        try {
+            android.util.JsonReader(java.io.StringReader(json)).use { reader ->
+                reader.hasNext() // Triggers parse
+            }
+        } catch (e: Exception) {
+            setStatus("❌ Invalid JSON input")
+            return
+        }
+
         lifecycleScope.launch {
-            setUiBusy(true, "Running…")
+            setUiBusy(true, "Executing module…")
             val result = withContext(Dispatchers.IO) { engine.run(json) }
             result.fold(
                 onSuccess  = {
                     binding.tvOutput.text = it
-                    setStatus("✅ Run completed")
+                    setStatus("✅ Execution successful")
                 },
                 onFailure  = {
-                    binding.tvOutput.text = "❌ ${it.message}"
-                    setStatus("❌ Run error: ${it.message}")
+                    binding.tvOutput.text = "Error: ${it.message}"
+                    setStatus("❌ execution failed")
                 }
             )
             setUiBusy(false)
         }
+    }
+
+    private fun copyToClipboard(text: String) {
+        val clipboard = getSystemService(android.content.ClipboardManager::class.java)
+        val clip = android.content.ClipData.newPlainText("Wasm Output", text)
+        clipboard.setPrimaryClip(clip)
+        setStatus("📋 Copied to clipboard")
     }
 
     // ──────────────────────────────────────────────────────────────────────────

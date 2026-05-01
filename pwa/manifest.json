@@ -1,13 +1,13 @@
 {
-  "name": "MobileWasm PWA",
+  "name": "MobileWasm | Premium Wasm Runtime",
   "short_name": "MobileWasm",
-  "description": "Run WebAssembly modules in the browser — the companion web app to the MobileWasm Android runtime.",
+  "description": "Run WebAssembly modules in a premium, sandboxed environment — companion to the MobileWasm Android app.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#0d1117",
-  "theme_color": "#1f6feb",
+  "background_color": "#080a0f",
+  "theme_color": "#3b82f6",
   "lang": "en",
   "icons": [
     {

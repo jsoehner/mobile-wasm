@@ -6,10 +6,11 @@ directly in the browser via the WebAssembly JavaScript API (PWA).
 
 ## Current Update
 
-- Added a new advanced math WASM example set for sum, subtract, multiply, and divide with JSON input/output.
-- Bumped the Android artifact version to `1.2.0` so GitHub Releases can publish a fresh APK and matching example assets.
-- Extended the release workflow to package and attach the new math example ZIPs alongside the APK.
-- Previously fixed CI release issues so the workflow skips tag push collisions, creates/releases the APK from the same `main` run, and retries transient WasmEdge download failures.
+- **Premium UI Overhaul**: Redesigned the PWA and Android app with a modern, high-end aesthetic (glassmorphism, Material 3, and vibrant accents).
+- **Run History**: Added persistent execution history to the PWA to track module performance and results.
+- **Enhanced UX**: Added JSON formatting, "Copy to Clipboard" support, and improved status reporting across both platforms.
+- **Performance Optimizations**: Implemented `instantiateStreaming` in the PWA and optimized the Android package installer's redirect logic.
+- **Stability**: Added JSON input validation and improved error handling for JNI and Wasm execution.
 
 ## Progressive Web App
 
