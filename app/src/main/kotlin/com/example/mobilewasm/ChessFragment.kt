@@ -29,6 +29,14 @@ class ChessFragment : Fragment() {
         private const val CHESS_WASM = "chess.wasm"
     }
 
+    private val pickEngineLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.GetContent()) { uri: android.net.Uri? ->
+        if (uri == null) {
+            setStatus("Engine selection cancelled")
+            return@registerForActivityResult
+        }
+        loadEngineFromUri(uri)
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentChessBinding.inflate(inflater, container, false)
         return binding.root
@@ -49,6 +57,10 @@ class ChessFragment : Fragment() {
 
         binding.btnLoadCustom.setOnClickListener {
             simulateCompilationAndLoad()
+        }
+
+        binding.btnLoadFile.setOnClickListener {
+            pickEngineLauncher.launch("application/wasm")
         }
 
         loadEngine()
@@ -133,6 +145,26 @@ class ChessFragment : Fragment() {
             result.fold(
                 onSuccess = { setStatus("✅ Successfully compiled and loaded custom engine.") },
                 onFailure = { setStatus("❌ Loading failed: ${it.message}") }
+            )
+        }
+    }
+
+    private fun loadEngineFromUri(uri: android.net.Uri) {
+        lifecycleScope.launch {
+            setStatus("Loading custom engine from file…")
+            val result = withContext(Dispatchers.IO) {
+                try {
+                    val input = requireContext().contentResolver.openInputStream(uri)
+                        ?: return@withContext Result.failure<Unit>(IllegalArgumentException("Unable to read file"))
+                    val bytes = input.use { it.readBytes() }
+                    engine.load("custom_chess_engine", bytes)
+                } catch (e: Exception) {
+                    Result.failure<Unit>(e)
+                }
+            }
+            result.fold(
+                onSuccess = { setStatus("✅ Custom engine loaded. White to move.") },
+                onFailure = { setStatus("❌ Load failed: ${it.message}") }
             )
         }
     }

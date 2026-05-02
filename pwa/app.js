@@ -47,6 +47,13 @@ const el = {
   btnCopy:      $('btn-copy-output'),
   historyContainer: $('history-container'),
   btnClearHistory: $('btn-clear-history'),
+  
+  // Chess
+  btnLoadChess: $('btn-load-chess'),
+  sectionChess: $('section-chess'),
+  chessBoard:   $('chess-board'),
+  btnChessReset:$('btn-chess-reset'),
+  btnChessUnload:$('btn-chess-unload'),
 };
 
 /* ── Status helpers ─────────────────────────────────────────────── */
@@ -205,6 +212,89 @@ function buildDemoWasm() {
   return bytes.buffer;
 }
 
+/* ── Chess Logic ────────────────────────────────────────────────── */
+let chessState = {
+  board: Array(8).fill(null).map(() => Array(8).fill(null)),
+  selected: null,
+};
+
+const pieces = {
+  'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
+  'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
+};
+
+function initChessBoard() {
+  const layout = [
+    ['r','n','b','q','k','b','n','r'],
+    ['p','p','p','p','p','p','p','p'],
+    Array(8).fill(null), Array(8).fill(null), Array(8).fill(null), Array(8).fill(null),
+    ['P','P','P','P','P','P','P','P'],
+    ['R','N','B','Q','K','B','N','R']
+  ];
+  chessState.board = layout;
+  renderChessBoard();
+}
+
+function renderChessBoard() {
+  el.chessBoard.innerHTML = '';
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const square = document.createElement('div');
+      square.className = `chess-square ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
+      if (chessState.selected && chessState.selected.r === r && chessState.selected.c === c) {
+        square.classList.add('selected');
+      }
+      square.dataset.r = r;
+      square.dataset.c = c;
+      
+      const piece = chessState.board[r][c];
+      if (piece) {
+        square.textContent = pieces[piece] || piece;
+      }
+      
+      square.onclick = () => handleSquareClick(r, c);
+      el.chessBoard.appendChild(square);
+    }
+  }
+}
+
+async function handleSquareClick(r, c) {
+  if (chessState.selected) {
+    const fromR = chessState.selected.r;
+    const fromC = chessState.selected.c;
+    
+    if (fromR === r && fromC === c) {
+      chessState.selected = null;
+    } else {
+      const from = `${String.fromCharCode(97 + fromC)}${8 - fromR}`;
+      const to   = `${String.fromCharCode(97 + c)}${8 - r}`;
+      
+      try {
+        const input = JSON.stringify({ action: 'move', from, to });
+        const res = JSON.parse(runModule(input));
+        
+        if (res.status === 'ok') {
+          chessState.board[r][c] = chessState.board[fromR][fromC];
+          chessState.board[fromR][fromC] = null;
+          chessState.selected = null;
+          setStatus(`Move: ${from} to ${to}`, 'success');
+        } else {
+          throw new Error(res.error || 'Invalid move');
+        }
+      } catch (err) {
+        setStatus(err.message, 'error');
+        chessState.selected = null;
+      }
+    }
+    renderChessBoard();
+  } else {
+    if (chessState.board[r][c]) {
+      chessState.selected = { r, c };
+      renderChessBoard();
+    }
+  }
+}
+
 /* ── Events ─────────────────────────────────────────────────────── */
 
 // Tab switching
@@ -228,6 +318,26 @@ el.btnLoadDemo.addEventListener('click', async () => {
   } finally {
     el.btnLoadDemo.disabled = false;
   }
+});
+
+el.btnLoadChess.addEventListener('click', async () => {
+  el.btnLoadChess.disabled = true;
+  try {
+    // For chess mode, we use the same demo binary which now acts as a mock chess engine
+    await loadWasm(buildDemoWasm(), 'chess (demo)');
+    el.sectionChess.classList.remove('hidden');
+    el.sectionRun.classList.add('hidden'); // Hide raw run in chess mode
+    initChessBoard();
+    el.sectionChess.scrollIntoView({ behavior: 'smooth' });
+  } finally {
+    el.btnLoadChess.disabled = false;
+  }
+});
+
+el.btnChessReset.addEventListener('click', initChessBoard);
+el.btnChessUnload.addEventListener('click', () => {
+  el.sectionChess.classList.add('hidden');
+  unloadModule();
 });
 
 el.inputFile.addEventListener('change', () => {
