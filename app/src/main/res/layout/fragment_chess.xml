@@ -38,6 +38,17 @@
         android:layout_marginVertical="24dp" />
 
     <Button
+        android:id="@+id/btnLoadCustom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Compile &amp; Load Custom"
+        style="@style/Widget.Material3.Button.TonalButton"
+        app:layout_constraintBottom_toTopOf="@id/btnReset"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="8dp" />
+
+    <Button
         android:id="@+id/btnReset"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
