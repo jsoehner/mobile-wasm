@@ -13,7 +13,9 @@ import com.example.mobilewasm.manifest.WasmManifest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.google.android.material.progressindicator.LinearProgressIndicator
 import java.io.File
+import java.util.zip.ZipFile
 
 /**
  * Demo Activity that:
