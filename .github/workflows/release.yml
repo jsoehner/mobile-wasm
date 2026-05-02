@@ -83,6 +83,7 @@ jobs:
           wat2wasm pwa/demo/examples/advanced/math_subtract.wat -o release-assets/examples/math_subtract.wasm
           wat2wasm pwa/demo/examples/advanced/math_multiply.wat -o release-assets/examples/math_multiply.wasm
           wat2wasm pwa/demo/examples/advanced/math_divide.wat -o release-assets/examples/math_divide.wasm
+          wat2wasm app/src/main/assets/chess.wat -o app/src/main/assets/chess.wasm
 
           cat > release-assets/examples/manifest_fixed_ok.json <<'JSON'
           {
