@@ -1,0 +1,29 @@
+commit 1da7ed9796bfbcc6862a7d4628f24d2450b6d162
+Author: Jeff Soehner <jsoehner@the-techy.com>
+Date:   Fri May 1 19:54:49 2026 -0400
+
+    feat: implement run history and UI enhancements in PWA and Android app
+
+commit 288e89e9117ab16cf6137e40744324b8f6369b09
+Author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+Date:   Sat Apr 18 15:15:47 2026 -0400
+
+    feat: add math wasm release examples
+
+commit ab777f5f3e44f1c952e8b7488ae5097d8c8b4fcb
+Author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+Date:   Sat Apr 18 14:31:15 2026 -0400
+
+    build: retry WasmEdge download on transient HTTP failures
+
+commit 447d78cb2e8a232278651c98c34f94d4d068e5c2
+Author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+Date:   Sat Apr 18 14:27:54 2026 -0400
+
+    ci: run release on main push and attach APK
+
+commit fdb1102c9defa088528a30738c928b9a6bcd7fb1
+Author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+Date:   Sat Apr 18 14:20:55 2026 -0400
+
+    ci: skip tag push when remote tag exists
