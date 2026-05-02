@@ -1,100 +1,69 @@
-package com.example.mobilewasm
-
-import android.os.Bundle
-import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
-import com.example.mobilewasm.databinding.FragmentChessBinding
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-
-class ChessFragment : Fragment() {
-
-    private var _binding: FragmentChessBinding? = null
-    private val binding get() = _binding!!
-    
-    private lateinit var engine: WasmEngine
-
-    companion object {
-        private const val TAG = "ChessFragment"
-        private const val CHESS_WASM = "chess.wasm"
-    }
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        _binding = FragmentChessBinding.inflate(inflater, container, false)
-        return binding.root
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        engine = WasmEngine.getInstance()
-
-        binding.chessView.onMoveListener = { from, to ->
-            handleMove(from, to)
-        }
-
+// ... existing code ...
         binding.btnReset.setOnClickListener {
             binding.chessView.resetBoard()
             setStatus("Game reset")
         }
 
-        loadEngine()
+        // New: Handle loading a custom/user-created module from source code.
+        binding.btnLoadCustom.setOnClickListener {
+            simulateCompilationAndLoad()
+        }
     }
 
     override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
+// ... existing code ...
+    /** 
+     * Loads the fixed, bundled chess engine asset (e.g., from assets/chess.wasm).
+     */
+    private fun loadAssetEngine() {
+// ... existing code ...
+        }
     }
-
-    private fun loadEngine() {
+    
+    /** 
+     * 
+     * Simulates the entire flow:
+     * 1. Read Source Code (Mock).
+     * 2. Compile (using WasmCompilerService).
+     * 3. Load the resulting WASM bytes into the WasmEngine.
+     */
+    private fun simulateCompilationAndLoad() {
         lifecycleScope.launch {
-            setStatus("Loading Chess engine…")
+            setStatus("Compiling new engine... (Simulated source input)")
+            
+            // Step 1: Mock Source Code Input
+            val mockSourceCode = "// Example chess logic in C++ or Rust..."
+            
+            // Step 2: Simulate Compilation
+            val compiledBytes = WasmCompilerService.compile(mockSourceCode, "C++")
+            
+            if (compiledBytes == null) {
+                setStatus("❌ Compilation failed. Check source code and compiler setup.")
+                return@launch
+            }
+            
+            // Step 3: Load the resulting WASM bytes
+            setStatus("Compilation successful. Attempting to load module...")
             val result = withContext(Dispatchers.IO) {
-                try {
-                    // In a real app, chess.wasm would be pre-compiled in assets.
-                    // For now, we expect it to be there.
-                    val bytes = requireContext().assets.open(CHESS_WASM).use { it.readBytes() }
-                    engine.load("chess_engine", bytes)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to load chess engine", e)
-                    Result.failure(e)
-                }
+                engine.load("user_compiled_engine", compiledBytes)
             }
             
             result.fold(
-                onSuccess = { setStatus("White to move") },
-                onFailure = { setStatus("❌ Engine load failed: ${it.message}") }
+                onSuccess = { setStatus("✅ Successfully compiled and loaded custom engine.") },
+                onFailure = { setStatus("❌ Loading failed: ${it.message}") }
             )
         }
     }
 
-    private fun handleMove(from: String, to: String) {
-        val json = """{"action":"move","from":"$from","to":"$to"}"""
-        
-        lifecycleScope.launch {
-            setStatus("Thinking…")
-            val result = withContext(Dispatchers.IO) {
-                engine.run(json)
-            }
-            
-            result.fold(
-                onSuccess = {
-                    // The engine returns {"status":"ok"}
-                    binding.chessView.movePiece(from, to)
-                    setStatus("Move: $from to $to. Your turn.")
-                },
-                onFailure = {
-                    setStatus("❌ Invalid move: ${it.message}")
-                }
-            )
-        }
-    }
-
-    private fun setStatus(msg: String) {
-        binding.tvChessStatus.text = msg
+    /** 
+     * Placeholder function. This function must be replaced 
+     * by reading the output of a simulated compiler component.
+     * In a real app, this would trigger a system file picker and 
+     * read the WASM file contents.
+     */
+    private fun generateMockWasmBytes(): ByteArray {
+        // This function is now obsolete as we use the compiler service directly.
+        Log.w(TAG, "generateMockWasmBytes is now obsolete. Use simulateCompilationAndLoad instead.")
+        return ByteArray(0) 
     }
 }

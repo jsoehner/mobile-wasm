@@ -1,0 +1,2 @@
+# Mock WASM content. Should be replaced with a real compiled chess engine.
+\x00\x61\x73\x73\x65\x74\x2e\x77\x61\x73\x6d
