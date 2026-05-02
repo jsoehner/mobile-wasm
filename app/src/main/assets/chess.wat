@@ -9,21 +9,21 @@
     ;; In a real engine, we would parse the input JSON move and update state.
     
     ;; Write "{"status":"ok"}" to outPtr
-    (i32.store8 (local.get $outPtr) 123) ;; '{'
-    (i32.store8 (i32.add (local.get $outPtr) 1) 34) ;; '"'
-    (i32.store8 (i32.add (local.get $outPtr) 2) 115) ;; 's'
-    (i32.store8 (i32.add (local.get $outPtr) 3) 116) ;; 't'
-    (i32.store8 (i32.add (local.get $outPtr) 4) 97) ;; 'a'
-    (i32.store8 (i32.add (local.get $outPtr) 5) 116) ;; 't'
-    (i32.store8 (i32.add (local.get $outPtr) 6) 117) ;; 'u'
-    (i32.store8 (i32.add (local.get $outPtr) 7) 115) ;; 's'
-    (i32.store8 (i32.add (local.get $outPtr) 8) 34) ;; '"'
-    (i32.store8 (i32.add (local.get $outPtr) 9) 58) ;; ':'
-    (i32.store8 (i32.add (local.get $outPtr) 10) 34) ;; '"'
-    (i32.store8 (i32.add (local.get $outPtr) 11) 111) ;; 'o'
-    (i32.store8 (i32.add (local.get $outPtr) 12) 107) ;; 'k'
-    (i32.store8 (i32.add (local.get $outPtr) 13) 34) ;; '"'
-    (i32.store8 (i32.add (local.get $outPtr) 14) 125) ;; '}'
+    (i32.store8 (local.get $outPtr) (i32.const 123)) ;; '{'
+    (i32.store8 (i32.add (local.get $outPtr) (i32.const 1) ) (i32.const 34)) ;; '"'
+    (i32.store8 (i32.add (local.get $outPtr) (i32.const 2) ) (i32.const 115)) ;; 's'
+    (i32.store8 (i32.add (local.get $outPtr) (i32.const 3) ) (i32.const 116)) ;; 't'
+    (i32.store8 (i32.add (local.get $outPtr) (i32.const 4) ) (i32.const 97)) ;; 'a'
+    (i32.store8 (i32.add (local.get $outPtr) (i32.const 5) ) (i32.const 116)) ;; 't'
+    (i32.store8 (i32.add (local.get $outPtr) (i32.const 6) ) (i32.const 117)) ;; 'u'
+    (i32.store8 (i32.add (local.get $outPtr) (i32.const 7) ) (i32.const 115)) ;; 's'
+    (i32.store8 (i32.add (local.get $outPtr) (i32.const 8) ) (i32.const 34)) ;; '"'
+    (i32.store8 (i32.add (local.get $outPtr) (i32.const 9) ) (i32.const 58)) ;; ':'
+    (i32.store8 (i32.add (local.get $outPtr) (i32.const 10)) (i32.const 34)) ;; '"'
+    (i32.store8 (i32.add (local.get $outPtr) (i32.const 11)) (i32.const 111)) ;; 'o'
+    (i32.store8 (i32.add (local.get $outPtr) (i32.const 12)) (i32.const 107)) ;; 'k'
+    (i32.store8 (i32.add (local.get $outPtr) (i32.const 13)) (i32.const 34)) ;; '"'
+    (i32.store8 (i32.add (local.get $outPtr) (i32.const 14)) (i32.const 125)) ;; '}'
     
     (i32.const 15) ;; Length of the response
   )
