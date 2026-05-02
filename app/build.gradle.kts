@@ -8,6 +8,10 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+kotlin {
+    jvmToolchain(21)
+}
+
 val wasmedgeVersion = "0.14.1"
 val wasmedgeDir = layout.buildDirectory.dir("wasmedge").get().asFile
 val wasmedgeSha256 = providers.gradleProperty("wasmedgeSha256").orNull
