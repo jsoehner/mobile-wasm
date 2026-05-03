@@ -11,6 +11,7 @@ import com.example.mobilewasm.databinding.FragmentChessBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 
 /**
  * Fragment that demonstrates a Chess game powered by a WASM engine.
@@ -94,20 +95,27 @@ class ChessFragment : Fragment() {
 
     private fun handleMove(from: String, to: String) {
         val json = """{"action":"move","from":"$from","to":"$to"}"""
-        
         lifecycleScope.launch {
             setStatus("Thinking…")
             val result = withContext(Dispatchers.IO) {
                 engine.run(json)
             }
-            
             result.fold(
-                onSuccess = {
-                    binding.chessView.movePiece(from, to)
-                    setStatus("Move: $from to $to. Your turn.")
+                onSuccess = { output ->
+                    // Try to parse JSON
+                    try {
+                        val jsonObj = JSONObject(output)
+                        val boardFen = jsonObj.getString("board")
+                        binding.chessView.updateBoard(boardFen)
+                        setStatus("✅ Move: $from to $to. Your turn.")
+                    } catch (e: Exception) {
+                        // Fallback: treat output as FEN
+                        binding.chessView.updateBoard(output)
+                        setStatus("✅ Move: $from to $to. Your turn.")
+                    }
                 },
-                onFailure = {
-                    setStatus("❌ Invalid move: ${it.message}")
+                onFailure = { err ->
+                    setStatus("❌ Move failed: ${err.message}")
                 }
             )
         }

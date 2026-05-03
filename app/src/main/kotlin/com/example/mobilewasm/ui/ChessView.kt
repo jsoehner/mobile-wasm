@@ -70,8 +70,39 @@ class ChessView @JvmOverloads constructor(
     }
 
     fun updateBoard(fen: String) {
-        // Simple FEN-like parser could go here, or just direct board update
-        // For now, let's just invalidate for redraw
+        // Parse FEN string (only board part, no move history)
+        val boardPart = fen.split(" ")[0]
+        val rows = boardPart.split("/")
+        if (rows.size != 8) return
+        val pieceMap = mapOf(
+            'P' to "♙",
+            'N' to "♘",
+            'B' to "♗",
+            'R' to "♖",
+            'Q' to "♕",
+            'K' to "♔",
+            'p' to "♟",
+            'n' to "♞",
+            'b' to "♝",
+            'r' to "♜",
+            'q' to "♛",
+            'k' to "♚"
+        )
+        for (rowIdx in 0 until 8) {
+            var colIdx = 0
+            for (ch in rows[rowIdx]) {
+                if (ch.isDigit()) {
+                    val empty = ch - '0'
+                    repeat(empty) {
+                        board[rowIdx][colIdx] = null
+                        colIdx++
+                    }
+                } else {
+                    board[rowIdx][colIdx] = pieceMap[ch]
+                    colIdx++
+                }
+            }
+        }
         invalidate()
     }
     
