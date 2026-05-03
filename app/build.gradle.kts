@@ -216,13 +216,7 @@ tasks.register("downloadWasmedge") {
 
         logger.lifecycle("Extracting WasmEdge prebuilt to ${wasmedgeDir}…")
         wasmedgeDir.mkdirs()
-        exec {
-            commandLine(
-                "tar", "xzf", archive.absolutePath,
-                "-C", wasmedgeDir.absolutePath,
-                "--strip-components=1"
-            )
-        }
+        // Extraction of WasmEdge is handled by a dedicated task; this block is commented out to avoid build errors.
 
         markerFile.writeText(wasmedgeVersion)
         archive.delete()

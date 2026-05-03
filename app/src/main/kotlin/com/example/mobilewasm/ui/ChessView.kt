@@ -23,7 +23,7 @@ class ChessView @JvmOverloads constructor(
     }
     private val highlightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.argb(80, 255, 255, 0)
+        color = Color.argb(100, 255, 255, 0)
     }
 
     private var squareSize = 0f
@@ -116,7 +116,7 @@ class ChessView @JvmOverloads constructor(
                 
                 // Draw piece
                 board[row][col]?.let { piece ->
-                    canvas.drawText(piece, left + squareSize / 2f, top + squareSize * 0.8f, piecePaint)
+                    canvas.drawText(piece, left + squareSize / 2f, top + squareSize / 2f + piecePaint.textSize / 3f, piecePaint)
                 }
             }
         }
