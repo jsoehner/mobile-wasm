@@ -36,6 +36,13 @@ class ChessView @JvmOverloads constructor(
     var onMoveListener: ((from: String, to: String) -> Unit)? = null
     
     private var selectedSquare: Pair<Int, Int>? = null
+    private var lastMoveFrom: Pair<Int, Int>? = null
+    private var lastMoveTo: Pair<Int, Int>? = null
+
+    private val lastMovePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = Color.argb(120, 186, 202, 68) // Soft yellowish highlight for last move
+    }
 
     init {
         resetBoard()
@@ -69,11 +76,24 @@ class ChessView @JvmOverloads constructor(
         invalidate()
     }
 
-    fun updateBoard(fen: String) {
+    fun updateBoard(fen: String, lastMove: String? = null) {
         // Parse FEN string (only board part, no move history)
         val boardPart = fen.split(" ")[0]
         val rows = boardPart.split("/")
         if (rows.size != 8) return
+
+        if (lastMove != null && lastMove.length >= 4) {
+            val fCol = lastMove[0] - 'a'
+            val fRow = 8 - (lastMove[1] - '0')
+            val tCol = lastMove[2] - 'a'
+            val tRow = 8 - (lastMove[3] - '0')
+            lastMoveFrom = fRow to fCol
+            lastMoveTo = tRow to tCol
+        } else {
+            lastMoveFrom = null
+            lastMoveTo = null
+        }
+
         val pieceMap = mapOf(
             'P' to "♙",
             'N' to "♘",
@@ -144,6 +164,13 @@ class ChessView @JvmOverloads constructor(
                 if (selectedSquare?.first == row && selectedSquare?.second == col) {
                     canvas.drawRect(left, top, left + squareSize, top + squareSize, highlightPaint)
                 }
+
+                // Highlight last move
+                if ((lastMoveFrom?.first == row && lastMoveFrom?.second == col) ||
+                    (lastMoveTo?.first == row && lastMoveTo?.second == col)) {
+                    canvas.drawRect(left, top, left + squareSize, top + squareSize, lastMovePaint)
+                }
+
                 
                 // Draw piece
                 board[row][col]?.let { piece ->

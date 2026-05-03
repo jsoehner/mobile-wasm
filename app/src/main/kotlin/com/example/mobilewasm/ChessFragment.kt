@@ -47,7 +47,7 @@ class ChessFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        engine = WasmEngine.getInstance()
+        // engine = WasmEngine.getInstance() // Redundant, already initialized as wasmEngine
 
         binding.chessView.onMoveListener = { from, to ->
             handleMove(from, to)
@@ -108,11 +108,21 @@ class ChessFragment : Fragment() {
                     try {
                         val jsonObj = JSONObject(output)
                         val boardFen = jsonObj.getString("board")
-                        binding.chessView.updateBoard(boardFen)
-                        setStatus("✅ Move: $from to $to. Your turn.")
+                        val lastMove = if (jsonObj.has("lastMove")) jsonObj.getString("lastMove") else null
+                        val score = if (jsonObj.has("score")) jsonObj.getInt("score") else 0
+                        
+                        binding.chessView.updateBoard(boardFen, lastMove)
+                        
+                        if (score < -7000) {
+                            setStatus("🏁 Checkmate! You win.")
+                        } else if (score > 7000) {
+                            setStatus("🏁 Checkmate! Computer wins.")
+                        } else {
+                            setStatus("✅ Move: $from to $to. Your turn.")
+                        }
                     } catch (e: Exception) {
                         // Fallback: treat output as FEN
-                        binding.chessView.updateBoard(output)
+                        binding.chessView.updateBoard(output, null)
                         setStatus("✅ Move: $from to $to. Your turn.")
                     }
                 },
@@ -149,12 +159,12 @@ class ChessFragment : Fragment() {
             // Step 3: Load the resulting WASM bytes
             setStatus("Compilation successful. Attempting to load module...")
             val result = withContext(Dispatchers.IO) {
-                engine.load("user_compiled_engine", compiledBytes)
+                wasmEngine.load("user_compiled_engine", compiledBytes)
             }
             
             result.fold(
                 onSuccess = { setStatus("✅ Successfully compiled and loaded custom engine.") },
-                onFailure = { setStatus("❌ Loading failed: ${it.message}") }
+                onFailure = { error -> setStatus("❌ Loading failed: ${error.message}") }
             )
         }
     }

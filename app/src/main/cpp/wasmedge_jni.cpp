@@ -256,6 +256,7 @@ Java_com_example_mobilewasm_WasmEngine_nativeRun(JNIEnv *env, jobject /*thiz*/,
     }
 
     int32_t outLen = WasmEdge_ValueGetI32(results[0]);
+    LOGI("Wasm execute successful, outLen=%d", outLen);
     if (outLen < 0 || static_cast<uint32_t>(outLen) > OUT_CAP) {
         ThrowRuntimeException(env, "module returned invalid output length");
         return nullptr;

@@ -216,7 +216,11 @@ tasks.register("downloadWasmedge") {
 
         logger.lifecycle("Extracting WasmEdge prebuilt to ${wasmedgeDir}…")
         wasmedgeDir.mkdirs()
-        // Extraction of WasmEdge is handled by a dedicated task; this block is commented out to avoid build errors.
+        val exitValue = ProcessBuilder("tar", "-xzf", archive.absolutePath, "-C", wasmedgeDir.absolutePath, "--strip-components=1")
+            .inheritIO()
+            .start()
+            .waitFor()
+        if (exitValue != 0) throw GradleException("Tar extraction failed with exit code $exitValue")
 
         markerFile.writeText(wasmedgeVersion)
         archive.delete()
@@ -318,7 +322,7 @@ android {
     externalNativeBuild {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
-            version = "3.31.5"
+            version = "4.3.2"
         }
     }
 
