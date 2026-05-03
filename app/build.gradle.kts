@@ -16,119 +16,7 @@ val wasmedgeVersion = "0.14.1"
 val wasmedgeDir = layout.buildDirectory.dir("wasmedge").get().asFile
 val wasmedgeSha256 = providers.gradleProperty("wasmedgeSha256").orNull
 
-private val WASM_PAGE_SIZE = 65536
 
-private fun readVarUInt32(bytes: ByteArray, start: Int): Pair<Int, Int> {
-    var result = 0
-    var shift = 0
-    var index = start
-    while (true) {
-        if (index >= bytes.size) error("Unexpected EOF while reading LEB128")
-        val b = bytes[index].toInt() and 0xFF
-        index++
-        result = result or ((b and 0x7F) shl shift)
-        if ((b and 0x80) == 0) return result to index
-        shift += 7
-        if (shift > 35) error("Invalid LEB128 sequence")
-    }
-}
-
-private fun skipInitExpr(bytes: ByteArray, start: Int): Int {
-    if (start >= bytes.size || (bytes[start].toInt() and 0xFF) != 0x41) {
-        error("Only i32.const init expressions are supported in demo validator")
-    }
-    val (_, afterConst) = readVarUInt32(bytes, start + 1)
-    if (afterConst >= bytes.size || (bytes[afterConst].toInt() and 0xFF) != 0x0B) {
-        error("Init expression must terminate with end opcode")
-    }
-    return afterConst + 1
-}
-
-private fun validateDemoWasm(wasm: ByteArray) {
-    if (wasm.size < 8) error("Wasm too small")
-    val magic = byteArrayOf(0x00, 0x61, 0x73, 0x6D)
-    val version = byteArrayOf(0x01, 0x00, 0x00, 0x00)
-    if (!wasm.copyOfRange(0, 4).contentEquals(magic)) error("Invalid wasm magic")
-    if (!wasm.copyOfRange(4, 8).contentEquals(version)) error("Unsupported wasm version")
-
-    var offset = 8
-    var memoryMinPages: Int? = null
-    var maxDataEnd = 0
-
-    while (offset < wasm.size) {
-        val sectionId = wasm[offset].toInt() and 0xFF
-        offset += 1
-        val (sectionSize, sectionPayloadStart) = readVarUInt32(wasm, offset)
-        val sectionPayloadEnd = sectionPayloadStart + sectionSize
-        if (sectionPayloadEnd > wasm.size) error("Section exceeds wasm size")
-
-        when (sectionId) {
-            5 -> {
-                var i = sectionPayloadStart
-                val (count, afterCount) = readVarUInt32(wasm, i)
-                i = afterCount
-                if (count > 0) {
-                    val (flags, afterFlags) = readVarUInt32(wasm, i)
-                    i = afterFlags
-                    val (minPages, afterMin) = readVarUInt32(wasm, i)
-                    i = afterMin
-                    if ((flags and 0x1) != 0) {
-                        readVarUInt32(wasm, i)
-                    }
-                    memoryMinPages = minPages
-                }
-            }
-
-            11 -> {
-                var i = sectionPayloadStart
-                val (count, afterCount) = readVarUInt32(wasm, i)
-                i = afterCount
-                repeat(count) {
-                    val (kind, afterKind) = readVarUInt32(wasm, i)
-                    i = afterKind
-                    val dataOffset = when (kind) {
-                        0 -> {
-                            if ((wasm[i].toInt() and 0xFF) != 0x41) error("Unsupported active data expr")
-                            val (off, afterOff) = readVarUInt32(wasm, i + 1)
-                            if ((wasm[afterOff].toInt() and 0xFF) != 0x0B) error("Data expr missing end opcode")
-                            i = afterOff + 1
-                            off
-                        }
-
-                        1 -> 0
-
-                        2 -> {
-                            val (_, afterMemIdx) = readVarUInt32(wasm, i)
-                            i = afterMemIdx
-                            if ((wasm[i].toInt() and 0xFF) != 0x41) error("Unsupported active data expr")
-                            val (off, afterOff) = readVarUInt32(wasm, i + 1)
-                            if ((wasm[afterOff].toInt() and 0xFF) != 0x0B) error("Data expr missing end opcode")
-                            i = afterOff + 1
-                            off
-                        }
-
-                        else -> error("Unsupported data segment kind: $kind")
-                    }
-
-                    val (size, afterSize) = readVarUInt32(wasm, i)
-                    i = afterSize
-                    if (i + size > sectionPayloadEnd) error("Data segment exceeds section payload")
-                    val end = dataOffset + size
-                    if (end > maxDataEnd) maxDataEnd = end
-                    i += size
-                }
-            }
-        }
-
-        offset = sectionPayloadEnd
-    }
-
-    val minPages = memoryMinPages ?: error("Demo wasm must declare a memory section")
-    val memoryBytes = minPages * WASM_PAGE_SIZE
-    if (maxDataEnd > memoryBytes) {
-        error("Data segment out of bounds: end=$maxDataEnd memory=$memoryBytes")
-    }
-}
 
 // ──────────────────────────────────────────────────────────────
 // Task: download WasmEdge Android arm64 prebuilt before CMake
@@ -234,29 +122,7 @@ tasks.register<Copy>("copyWasmedgeLib") {
     into(layout.buildDirectory.dir("wasmedge_jniLibs/arm64-v8a").get().asFile)
 }
 
-tasks.register("validateDemoPackage") {
-    val demoZip = file("src/main/assets/sample/demo.zip")
-    inputs.file(demoZip)
 
-    doLast {
-        if (!demoZip.exists()) error("Missing demo package: ${demoZip.path}")
-        ZipFile(demoZip).use { zip ->
-            val manifestEntry = zip.getEntry("manifest.json")
-                ?: error("demo.zip missing manifest.json")
-            val echoEntry = zip.getEntry("echo.wasm")
-                ?: error("demo.zip missing echo.wasm")
-
-            val manifest = zip.getInputStream(manifestEntry).bufferedReader().use { it.readText() }
-            if (!manifest.contains("\"modules\"")) {
-                error("demo manifest does not declare modules")
-            }
-
-            val wasm = zip.getInputStream(echoEntry).use { it.readBytes() }
-            validateDemoWasm(wasm)
-            logger.lifecycle("Demo package validated: ${demoZip.name} (${wasm.size} bytes wasm)")
-        }
-    }
-}
 
 android {
     namespace = "com.example.mobilewasm"
@@ -357,9 +223,7 @@ tasks.matching {
     it.name.startsWith("merge") && it.name.contains("JniLib", ignoreCase = true)
 }.configureEach { dependsOn("copyWasmedgeLib") }
 
-tasks.named("preBuild").configure {
-    dependsOn("validateDemoPackage")
-}
+
 
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")

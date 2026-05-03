@@ -6,24 +6,25 @@
     android:padding="16dp">
 
     <TextView
-        android:id="@+id/tvChessTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Wasm Chess Engine"
-        android:textAppearance="?attr/textAppearanceHeadlineSmall"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <TextView
         android:id="@+id/tvChessStatus"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="Loading engine…"
         android:textAppearance="?attr/textAppearanceBodyMedium"
         android:textColor="?attr/colorOnSurfaceVariant"
-        app:layout_constraintTop_toBottomOf="@id/tvChessTitle"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="4dp" />
+
+    <TextView
+        android:id="@+id/tvChessTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Wasm Chess Engine"
+        android:textAppearance="?attr/textAppearanceHeadlineSmall"
+        app:layout_constraintTop_toBottomOf="@id/tvChessStatus"
+        app:layout_constraintStart_toStartOf="parent"
         android:layout_marginTop="4dp" />
 
     <com.example.mobilewasm.ui.ChessView
@@ -31,7 +32,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintTop_toBottomOf="@id/tvChessStatus"
+        app:layout_constraintTop_toBottomOf="@id/tvChessTitle"
         app:layout_constraintBottom_toTopOf="@id/btnReset"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
