@@ -19,7 +19,7 @@ import java.io.File
 class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
-    private val binding get() = _binding!!
+    private val binding get() = _binding ?: throw IllegalStateException("Binding not initialized")
     
     private lateinit var store: PackageStore
     private lateinit var engine: WasmEngine

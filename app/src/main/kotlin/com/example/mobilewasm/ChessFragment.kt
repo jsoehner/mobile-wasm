@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.mobilewasm.databinding.FragmentChessBinding
+import com.example.mobilewasm.WasmChessEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -20,9 +21,10 @@ import org.json.JSONObject
 class ChessFragment : Fragment() {
 
     private var _binding: FragmentChessBinding? = null
-    private val binding get() = _binding!!
+    private val binding get() = _binding ?: throw IllegalStateException("Binding not initialized")
     
-    private lateinit var engine: WasmEngine
+    private val wasmEngine = WasmEngine.getInstance()
+    private val chessEngine = WasmChessEngine.getInstance()
     private val compilerService = WasmCompilerService()
 
     companion object {
@@ -79,7 +81,7 @@ class ChessFragment : Fragment() {
                 try {
                     // Search for chess.wasm in assets
                     val bytes = requireContext().assets.open(CHESS_WASM).use { it.readBytes() }
-                    engine.load("chess_engine", bytes)
+                    chessEngine.loadModule("chess_engine", bytes)
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to load chess engine", e)
                     Result.failure(e)
@@ -98,7 +100,7 @@ class ChessFragment : Fragment() {
         lifecycleScope.launch {
             setStatus("Thinking…")
             val result = withContext(Dispatchers.IO) {
-                engine.run(json)
+                wasmEngine.run(json)
             }
             result.fold(
                 onSuccess = { output ->
@@ -165,7 +167,7 @@ class ChessFragment : Fragment() {
                     val input = requireContext().contentResolver.openInputStream(uri)
                         ?: return@withContext Result.failure<Unit>(IllegalArgumentException("Unable to read file"))
                     val bytes = input.use { it.readBytes() }
-                    engine.load("custom_chess_engine", bytes)
+                    chessEngine.loadModule("custom_chess_engine", bytes)
                 } catch (e: Exception) {
                     Result.failure<Unit>(e)
                 }
