@@ -133,7 +133,6 @@ android {
         minSdk = 26
         // Use a stable compile/target SDK that is available in the local SDK manager.
         // The previous value 35 may not be installed yet and can cause a build failure.
-        compileSdk = 34
         targetSdk = 34
         versionCode = 5
         versionName = "1.3.1"
@@ -191,7 +190,7 @@ android {
     externalNativeBuild {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
-            version = "4.3.2"
+            version = "3.22.1"
         }
     }
 

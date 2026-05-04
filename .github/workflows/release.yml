@@ -60,9 +60,6 @@ jobs:
           path: app/build/wasmedge
           key: wasmedge-android-arm64-0.14.1
 
-      - name: Build release APK
-        run: ./gradlew assembleRelease --no-daemon
-
       - name: Install WABT
         run: |
           for i in {1..3}; do
@@ -83,7 +80,6 @@ jobs:
           wat2wasm pwa/demo/examples/advanced/math_subtract.wat -o release-assets/examples/math_subtract.wasm
           wat2wasm pwa/demo/examples/advanced/math_multiply.wat -o release-assets/examples/math_multiply.wasm
           wat2wasm pwa/demo/examples/advanced/math_divide.wat -o release-assets/examples/math_divide.wasm
-          wat2wasm app/src/main/assets/chess.wat -o app/src/main/assets/chess.wasm
 
           cat > release-assets/examples/manifest_fixed_ok.json <<'JSON'
           {
@@ -204,6 +200,9 @@ jobs:
 
           rm -f release-assets/examples/manifest.json
           sha256sum release-assets/examples/*.zip > release-assets/examples/SHA256SUMS.txt
+
+      - name: Build release APK
+        run: ./gradlew assembleRelease --no-daemon
 
       - name: Locate APK
         id: apk_path
