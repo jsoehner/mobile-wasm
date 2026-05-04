@@ -1,6 +1,6 @@
 plugins {
-    id("com.android.application") version "8.7.1" apply false
-    id("org.jetbrains.kotlin.android") version "1.9.25" apply false
+    id("com.android.application") version "8.9.0" apply false
+    id("org.jetbrains.kotlin.android") version "2.1.0" apply false
     id("org.owasp.dependencycheck") version "9.0.1"
     id("io.gitlab.arturbosch.detekt") version "1.23.6"
 }
