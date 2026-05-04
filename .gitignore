@@ -15,3 +15,7 @@ app/build/wasmedge_jniLibs/
 
 # Android build outputs
 app/build/
+
+# Gradle distribution downloads (never commit these)
+gradle-*-bin.zip
+gradle-*/
