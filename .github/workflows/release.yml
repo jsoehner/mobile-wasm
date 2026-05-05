@@ -5,6 +5,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 # Only one release job runs at a time; cancel in-progress runs on the same ref.
 concurrency:
@@ -228,7 +229,7 @@ jobs:
   # ────────────────────────────────────────────────────────────────────────────
   tag:
     name: Create & push version tag
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     outputs:
@@ -243,8 +244,8 @@ jobs:
       - name: Extract version from build.gradle.kts
         id: version
         run: |
-          VERSION=$(grep 'versionName\s*=' app/build.gradle.kts | head -1 \
-            | sed 's/.*versionName\s*=\s*"\(.*\)".*/\1/')
+          VERSION=$(grep 'versionName *=' app/build.gradle.kts | head -1 \
+            | sed 's/.*versionName *= *"\(.*\)".*/\1/')
           if [ -z "$VERSION" ]; then
             echo "::error::Could not extract versionName from app/build.gradle.kts"
             exit 1
@@ -271,7 +272,7 @@ jobs:
   # ────────────────────────────────────────────────────────────────────────────
   release:
     name: Create GitHub Release
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     needs:
       - build
       - tag
