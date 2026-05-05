@@ -41,7 +41,7 @@ int D(int q, int l, int e, int E, int z, int n)
  if(a->K!=Z||z||!(m<=q||X&8&&m>=l||X&S)) d=Y=0;
  X&=~M;
 
- W(d++<n||d<3||(z&&K==I&&(N<100000&d<98||(K=X,L=Y&~M,d=3))))
+ W(d++<n||d<3||(z&&K==I&&(N<1000000&d<98||(K=X,L=Y&~M,d=3))))
  {x=B=X;
   h=Y&S;
   P=d<3?I:D(-l,1-l,-e,S,0,d-3);
@@ -51,7 +51,7 @@ int D(int q, int l, int e, int E, int z, int n)
    if(u&k)
    {r=u&7;
     j=o[r+16];
-    W(r=u&7>2&r<0?-r:-o[++j])
+    W(r=(u&7)>2&r<0?-r:-o[++j])
     {
      A_label:
      y=x;F=G=S;
