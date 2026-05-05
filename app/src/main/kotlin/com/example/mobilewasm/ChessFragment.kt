@@ -110,13 +110,16 @@ class ChessFragment : Fragment() {
                         val boardFen = jsonObj.getString("board")
                         val lastMove = if (jsonObj.has("lastMove")) jsonObj.getString("lastMove") else null
                         val score = if (jsonObj.has("score")) jsonObj.getInt("score") else 0
+                        val inCheck = if (jsonObj.has("check")) jsonObj.getBoolean("check") else false
                         
                         binding.chessView.updateBoard(boardFen, lastMove)
                         
-                        if (score < -7000) {
+                        if (score < -90000) {
                             setStatus("🏁 Checkmate! You win.")
-                        } else if (score > 7000) {
+                        } else if (score > 90000) {
                             setStatus("🏁 Checkmate! Computer wins.")
+                        } else if (inCheck) {
+                            setStatus("⚠️ Check! Your turn.")
                         } else {
                             setStatus("✅ Move: $from to $to. Your turn.")
                         }
