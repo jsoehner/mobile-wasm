@@ -23,7 +23,7 @@ class WasmCompilerService {
      * @return A ByteArray representing the compiled WASM module, or null on failure.
      */
     fun compile(sourceCode: String, language: String): ByteArray? {
-        Log.d(TAG, "Starting compilation simulation for $language source code...")
+        Log.d(TAG, "Starting compilation simulation for ${sourceCode.length}-byte source.")
 
         if (sourceCode.isBlank()) {
             Log.e(TAG, "Cannot compile: Source code is blank.")

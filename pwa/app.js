@@ -180,6 +180,11 @@ function addToHistory(name, duration) {
   renderHistory();
 }
 
+function escapeHtml(str) {
+  const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+  return String(str).replace(/[&<>"']/g, c => map[c]);
+}
+
 function renderHistory() {
   if (state.history.length === 0) {
     el.historyContainer.innerHTML = '<div class="text-dim" style="text-align: center; padding: 20px; font-style: italic;">No previous runs recorded.</div>';
@@ -189,11 +194,11 @@ function renderHistory() {
   el.historyContainer.innerHTML = state.history.map(h => `
     <div class="history-item">
       <div>
-        <div style="font-weight: 600;">${h.name}</div>
-        <div class="history-time">${h.timestamp}</div>
+        <div style="font-weight: 600;">${escapeHtml(h.name)}</div>
+        <div class="history-time">${escapeHtml(h.timestamp)}</div>
       </div>
       <div class="badge" style="background: rgba(59, 130, 246, 0.1); color: var(--accent); border-color: transparent;">
-        ${h.duration}ms
+        ${escapeHtml(h.duration)}ms
       </div>
     </div>
   `).join('');
@@ -222,6 +227,14 @@ const pieces = {
   'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
   'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
 };
+
+/**
+ * Validate a chess move notation string (e.g. "e2", "g7").
+ * Returns true if the string matches [a-h][1-8].
+ */
+function isValidSquare(notation) {
+  return /^[a-h][1-8]$/.test(notation);
+}
 
 function initChessBoard() {
   const layout = [
@@ -268,6 +281,22 @@ async function handleSquareClick(r, c) {
     } else {
       const from = `${String.fromCharCode(97 + fromC)}${8 - fromR}`;
       const to   = `${String.fromCharCode(97 + c)}${8 - r}`;
+      
+      // Validate move coordinates before sending to WASM
+      if (!isValidSquare(from) || !isValidSquare(to)) {
+        setStatus('Invalid move coordinates.', 'error');
+        chessState.selected = null;
+        renderChessBoard();
+        return;
+      }
+      
+      // Prevent moving to the same square
+      if (from === to) {
+        setStatus('Cannot move to the same square.', 'error');
+        chessState.selected = null;
+        renderChessBoard();
+        return;
+      }
       
       try {
         const input = JSON.stringify({ action: 'move', from, to });

@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <limits.h>
 
 #define U 1048576
 #define M 136
@@ -189,7 +190,7 @@ const char* find_json_val(const char* buf, int len, const char* key) {
     if (!buf || len <= 0) return 0;
     for (int i = 0; i < len - 4; i++) {
         int match = 1;
-        for (int j = 0; key[j]; j++) if (buf[i + j] != key[j]) { match = 0; break; }
+        for (int j = 0; key[j] && (i + j) < len; j++) if (buf[i + j] != key[j]) { match = 0; break; }
         if (match) {
             const char* p = buf + i + 1;
             while (*p && *p != ':') p++;
@@ -238,22 +239,39 @@ int run(int inPtr, int inLen, int outPtr, int outCap) {
         moveStr[2] = 'a' + (L % 16); moveStr[3] = '0' + (8 - (L / 16));
     }
     int len = 0;
-    const char* pr = "{\"board\":\""; while (*pr) output[len++] = *pr++;
-    char* f = fen; while (*f) output[len++] = *f++;
-    const char* m1 = "\",\"lastMove\":\""; while (*m1) output[len++] = *m1++;
-    char* m2 = moveStr; while (*m2) output[len++] = *m2++;
-    const char* s1 = "\",\"score\":"; while (*s1) output[len++] = *s1++;
-    int s_val = score; if (s_val < 0) { output[len++] = '-'; s_val = -s_val; }
-    if (s_val == 0) output[len++] = '0';
-    else { char buf[10]; int bi = 0; while (s_val > 0) { buf[bi++] = '0' + (s_val % 10); s_val /= 10; } while (bi > 0) output[len++] = buf[--bi]; }
-    const char* s2 = ",\"check\":"; while (*s2) output[len++] = *s2++;
-    if (inCheck) {
-        const char* b_true = "true"; while (*b_true) output[len++] = *b_true++;
-    } else {
-        const char* b_false = "false"; while (*b_false) output[len++] = *b_false++;
+    const char* pr = "{\"board\":\""; while (*pr && len < outCap) output[len++] = *pr++;
+    if (len >= outCap) return len;
+    char* f = fen; while (*f && len < outCap) output[len++] = *f++;
+    if (len >= outCap) return len;
+    const char* m1 = "\",\"lastMove\":\""; while (*m1 && len < outCap) output[len++] = *m1++;
+    if (len >= outCap) return len;
+    char* m2 = moveStr; while (*m2 && len < outCap) output[len++] = *m2++;
+    if (len >= outCap) return len;
+    const char* s1 = "\",\"score\":"; while (*s1 && len < outCap) output[len++] = *s1++;
+    if (len >= outCap) return len;
+    int s_val = score;
+    if (s_val < 0) {
+        output[len++] = '-';
+        if (s_val == INT_MIN) s_val = INT_MAX; else s_val = -s_val;
     }
+    if (len >= outCap) return len;
+    if (s_val == 0) output[len++] = '0';
+    else {
+        char buf[10]; int bi = 0;
+        while (s_val > 0) { buf[bi++] = '0' + (s_val % 10); s_val /= 10; }
+        while (bi > 0 && len < outCap) output[len++] = buf[--bi];
+    }
+    if (len >= outCap) return len;
+    const char* s2 = ",\"check\":"; while (*s2 && len < outCap) output[len++] = *s2++;
+    if (len >= outCap) return len;
+    if (inCheck) {
+        const char* b_true = "true"; while (*b_true && len < outCap) output[len++] = *b_true++;
+    } else {
+        const char* b_false = "false"; while (*b_false && len < outCap) output[len++] = *b_false++;
+    }
+    if (len >= outCap) return len;
 
-    const char* su = "}"; while (*su) output[len++] = *su++;
+    const char* su = "}"; while (*su && len < outCap) output[len++] = *su++;
     return len;
 }
 
