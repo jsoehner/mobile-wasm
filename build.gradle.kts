@@ -1,7 +1,7 @@
 plugins {
     id("com.android.application") version "8.9.0" apply false
     id("org.jetbrains.kotlin.android") version "2.1.0" apply false
-    id("org.owasp.dependencycheck") version "9.0.1"
+    id("org.owasp.dependencycheck") version "13.0.0"
     id("io.gitlab.arturbosch.detekt") version "1.23.6"
 }
 // Apply the plugins to all subprojects
