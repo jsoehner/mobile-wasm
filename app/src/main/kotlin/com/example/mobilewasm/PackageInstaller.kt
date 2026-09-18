@@ -36,6 +36,7 @@ class PackageInstaller(private val installDir: File) {
         private const val BUFFER_SIZE      = 8192
         private const val CONNECT_TIMEOUT_MS = 15_000
         private const val READ_TIMEOUT_MS    = 30_000
+        val PACKAGE_NAME_REGEX               = Regex("^[a-zA-Z0-9_-]{1,64}$")
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -133,7 +134,18 @@ class PackageInstaller(private val installDir: File) {
     }
 
     private fun installBytes(stream: InputStream, packageName: String): Result<InstallResult> {
+        if (!packageName.matches(PACKAGE_NAME_REGEX)) {
+            return Result.failure(
+                IllegalArgumentException("Invalid package name '$packageName': must contain only alphanumeric characters, dashes, or underscores (max 64)")
+            )
+        }
         val packageDir = File(installDir, packageName)
+        val canonicalInstallDir = installDir.canonicalPath + File.separator
+        if (!packageDir.canonicalPath.startsWith(canonicalInstallDir) && packageDir.canonicalPath != installDir.canonicalPath) {
+            return Result.failure(
+                SecurityException("Package path traversal blocked: '$packageName'")
+            )
+        }
         packageDir.mkdirs()
 
         return try {

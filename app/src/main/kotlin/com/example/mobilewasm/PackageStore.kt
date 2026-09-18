@@ -19,6 +19,9 @@ class PackageStore private constructor(context: Context) {
     private val installDir = File(context.filesDir, "packages").also { it.mkdirs() }
     private val installer  = PackageInstaller(installDir)
 
+    private fun isValidPackageName(packageName: String): Boolean =
+        packageName.matches(PackageInstaller.PACKAGE_NAME_REGEX)
+
     companion object {
         @Volatile private var instance: PackageStore? = null
 
@@ -37,15 +40,22 @@ class PackageStore private constructor(context: Context) {
 
     /** Returns the names of all installed packages. */
     fun listPackages(): List<String> =
-        installDir.listFiles()?.filter { it.isDirectory }?.map { it.name } ?: emptyList()
+        installDir.listFiles()?.filter { it.isDirectory && isValidPackageName(it.name) }?.map { it.name } ?: emptyList()
 
     /** Returns the directory for [packageName], or `null` if not installed. */
-    fun getPackageDir(packageName: String): File? =
-        File(installDir, packageName).takeIf { it.isDirectory }
+    fun getPackageDir(packageName: String): File? {
+        if (!isValidPackageName(packageName)) return null
+        val dir = File(installDir, packageName)
+        val canonicalInstallDir = installDir.canonicalPath + File.separator
+        if (!dir.canonicalPath.startsWith(canonicalInstallDir) && dir.canonicalPath != installDir.canonicalPath) return null
+        return dir.takeIf { it.isDirectory }
+    }
 
     /** Parses and returns the manifest of [packageName], or `null` on error. */
     fun getManifest(packageName: String): WasmManifest? {
-        val file = File(installDir, "$packageName/manifest.json")
+        if (!isValidPackageName(packageName)) return null
+        val dir = getPackageDir(packageName) ?: return null
+        val file = File(dir, "manifest.json")
         if (!file.exists()) return null
         return runCatching { ManifestParser.parse(file.readText()) }.getOrNull()
     }
@@ -55,14 +65,22 @@ class PackageStore private constructor(context: Context) {
      * after looking up its file path through the manifest.
      */
     fun getModuleBytes(packageName: String, moduleName: String): ByteArray? {
+        if (!isValidPackageName(packageName)) return null
+        val packageDir = getPackageDir(packageName) ?: return null
         val manifest = getManifest(packageName) ?: return null
         val module   = ManifestValidator.findModule(manifest, moduleName) ?: return null
-        return File(installDir, "$packageName/${module.file}")
-            .takeIf { it.exists() }
-            ?.readBytes()
+        val moduleFile = File(packageDir, module.file)
+        val canonicalPackageDir = packageDir.canonicalPath + File.separator
+        if (!moduleFile.canonicalPath.startsWith(canonicalPackageDir)) {
+            return null
+        }
+        return moduleFile.takeIf { it.exists() }?.readBytes()
     }
 
     /** Deletes the package directory for [packageName]. Returns `true` on success. */
-    fun removePackage(packageName: String): Boolean =
-        File(installDir, packageName).takeIf { it.exists() }?.deleteRecursively() ?: false
+    fun removePackage(packageName: String): Boolean {
+        if (!isValidPackageName(packageName)) return false
+        val packageDir = getPackageDir(packageName) ?: return false
+        return packageDir.deleteRecursively()
+    }
 }

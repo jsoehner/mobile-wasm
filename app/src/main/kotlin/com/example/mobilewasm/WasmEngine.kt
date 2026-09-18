@@ -26,11 +26,15 @@ class WasmEngine private constructor() {
         private const val TAG = "WasmEngine"
 
         @Volatile private var instance: WasmEngine? = null
+        @Volatile private var isClosed = false
 
-        fun getInstance(): WasmEngine =
-            instance ?: synchronized(this) {
+        fun getInstance(): WasmEngine {
+            check(!isClosed) { "WasmEngine has been closed" }
+            return instance ?: synchronized(this) {
+                check(!isClosed) { "WasmEngine has been closed" }
                 instance ?: WasmEngine().also { instance = it }
             }
+        }
     }
 
     init {
@@ -50,7 +54,7 @@ class WasmEngine private constructor() {
      */
     suspend fun load(moduleName: String, wasmBytes: ByteArray): Result<Unit> =
         mutex.withLock {
-            if (nativeHandle == 0L) {
+            if (isClosed || nativeHandle == 0L) {
                 return Result.failure(IllegalStateException("Engine is closed"))
             }
             val code = nativeLoad(nativeHandle, wasmBytes)
@@ -70,11 +74,11 @@ class WasmEngine private constructor() {
      */
     suspend fun run(jsonInput: String): Result<String> =
         mutex.withLock {
+            if (isClosed || nativeHandle == 0L) {
+                return Result.failure(IllegalStateException("Engine is closed"))
+            }
             if (activeModule == null) {
                 return Result.failure(IllegalStateException("No module is loaded"))
-            }
-            if (nativeHandle == 0L) {
-                return Result.failure(IllegalStateException("Engine is closed"))
             }
             runCatching { nativeRun(nativeHandle, jsonInput) }
         }
@@ -84,6 +88,10 @@ class WasmEngine private constructor() {
 
     /** Release the native engine. After this call the singleton is invalid. */
     fun close() {
+        synchronized(Companion) {
+            if (isClosed) return
+            isClosed = true
+        }
         runBlocking {
             mutex.withLock {
                 val h = nativeHandle

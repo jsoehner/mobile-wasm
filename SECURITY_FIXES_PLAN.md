@@ -8,7 +8,7 @@
 
 ## Overview
 
-This document tracks the remediation of 8 security vulnerabilities discovered across the MobileWasm codebase. Fixes span three files:
+This document tracks the remediation of 10 security vulnerabilities discovered and remediated across the MobileWasm codebase:
 
 | # | Severity | CWE | Title | File | Status |
 |---|----------|-----|-------|------|--------|
@@ -20,6 +20,8 @@ This document tracks the remediation of 8 security vulnerabilities discovered ac
 | 6 | 🟡 Medium | CWE-787 | Integer overflow on `INT_MIN` negation in score | `app/src/main/cpp/chess_engine.c` | ✅ Fixed |
 | 7 | 🟢 Low | CWE-693 | Overly permissive CSP (`'wasm-unsafe-eval'`) | `pwa/index.html` | ✅ Fixed |
 | 8 | 🟢 Low | CWE-362 | Race condition risk in singleton close() | `app/src/main/kotlin/.../WasmEngine.kt` | ✅ Fixed |
+| 9 | 🟠 High | CWE-22 | Potential path traversal via unvalidated `packageName` | `PackageInstaller.kt`, `PackageStore.kt` | ✅ Fixed |
+| 10 | 🟢 Low | CWE-20 | Unhandled JSON parse exception on corrupted `localStorage` | `pwa/app.js` | ✅ Fixed |
 
 ---
 
@@ -142,14 +144,41 @@ This document tracks the remediation of 8 security vulnerabilities discovered ac
 
 ---
 
+### Fix 9: Path Traversal via unvalidated `packageName` — `PackageInstaller.kt`, `PackageStore.kt`
+
+**Problem:** `packageName` passed to `PackageInstaller` and `PackageStore` was used directly in file paths (`File(installDir, packageName)`). Unsanitized input containing `..` could allow path traversal outside the intended package directory, causing arbitrary file creation, read, or deletion.
+
+**Strategy:**
+- Validate `packageName` with a strict regex (`^[a-zA-Z0-9_-]{1,64}$`)
+- Enforce canonical path checks (`canonicalPath.startsWith(...)`) before performing filesystem operations
+
+**Changes:**
+- Defined `PACKAGE_NAME_REGEX` in `PackageInstaller`
+- Added validation checks in `installBytes()`
+- Added validation and canonical path guards in `PackageStore` (`getPackageDir`, `getManifest`, `getModuleBytes`, `removePackage`)
+
+---
+
+### Fix 10: Unhandled JSON parse exception on corrupted storage — `pwa/app.js`
+
+**Problem:** `JSON.parse(localStorage.getItem('mw_history'))` threw uncaught exceptions if `localStorage` was corrupted or tampered with, breaking app initialization.
+
+**Strategy:**
+- Implement `loadSavedHistory()` helper with safe fallback to `[]` on parse errors or invalid types.
+
+**Changes:**
+- Wrapped history loading in `loadSavedHistory()` with try-catch and array type validation.
+
+---
+
 ## Verification
 
 After all fixes:
-1. Run `emcc` compilation to verify C changes compile cleanly
-2. Run PWA in browser DevTools to verify no console errors
-3. Test XSS payload in filename to confirm sanitization
-4. Test move validation with invalid inputs
-5. Review logs to confirm no sensitive data leakage
+1. Rebased branch cleanly onto `origin/main`
+2. Verified C chess engine bounds and check detection integration
+3. Checked JavaScript syntax using Node.js (`node --check`)
+4. Verified CSP directives and meta tags in PWA
+5. Verified Kotlin package isolation and path traversal guards
 
 ---
 
@@ -163,3 +192,4 @@ After all fixes:
 - CWE-787: Out-of-bounds Write — https://cwe.mitre.org/data/definitions/787.html
 - CWE-693: Protection Mechanism Failure — https://cwe.mitre.org/data/definitions/693.html
 - CWE-362: Concurrent Session Execution — https://cwe.mitre.org/data/definitions/362.html
+- CWE-22: Improper Limitation of a Pathname to a Restricted Directory — https://cwe.mitre.org/data/definitions/22.html

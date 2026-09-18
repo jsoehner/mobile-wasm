@@ -4,8 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#3b82f6" />
+  <!-- Content Security Policy: restricts script execution, restricts inline scripts, and sandboxes workers -->
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https:; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';" />
+        content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; script-src-elem 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https:; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';" />
   <meta name="description" content="MobileWasm PWA — Run WebAssembly modules with a premium, sandboxed experience." />
 
   <!-- PWA manifest -->

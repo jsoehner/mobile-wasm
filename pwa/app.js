@@ -11,13 +11,24 @@ const OUT_OFFSET = 65_536;
 const BUFFER_CAP = 65_536;
 const MAX_HISTORY = 10;
 
+function loadSavedHistory() {
+  try {
+    const raw = localStorage.getItem('mw_history');
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 /* ── State ──────────────────────────────────────────────────────── */
 const state = {
   instance: null,
   module:   null,
   name:     '',
   size:     0,
-  history:  JSON.parse(localStorage.getItem('mw_history') || '[]'),
+  history:  loadSavedHistory(),
 };
 
 /* ── DOM shortcuts ──────────────────────────────────────────────── */
