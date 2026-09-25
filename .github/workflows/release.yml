@@ -56,7 +56,7 @@ jobs:
       # The downloadWasmedge Gradle task fetches the prebuilt arm64 .so.
       # We cache it so repeated CI runs skip the ~30 MB download.
       - name: Cache WasmEdge prebuilt
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: app/build/wasmedge
           key: wasmedge-android-arm64-0.14.1
