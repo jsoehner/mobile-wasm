@@ -19,3 +19,6 @@ app/build/
 # Gradle distribution downloads (never commit these)
 gradle-*-bin.zip
 gradle-*/
+
+# Generated BOM artifacts
+oss/
