@@ -37,20 +37,34 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      # Create an Android debug keystore used for release signing in CI.
-      # For production releases, override with KEYSTORE_PATH / KEYSTORE_PASS /
-      # KEY_ALIAS / KEY_PASS repository secrets.
-      - name: Create debug keystore (CI signing)
+      # Set up Android signing keystore:
+      # Production: decode base64 keystore from KEYSTORE_BASE64 secret if present.
+      # Fallback: create debug keystore so CI builds succeed even without secrets.
+      - name: Set up signing keystore
+        id: signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
           mkdir -p ~/.android
-          if [ ! -f ~/.android/debug.keystore ]; then
-            keytool -genkey -v \
-              -keystore ~/.android/debug.keystore \
-              -storepass android \
-              -alias androiddebugkey \
-              -keypass android \
-              -keyalg RSA -keysize 2048 -validity 10000 \
-              -dname "CN=Android Debug,O=Android,C=US"
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "Using production keystore from secret."
+            KEYSTORE_PATH="$RUNNER_TEMP/release.keystore"
+            echo "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+            echo "keystore_path=$KEYSTORE_PATH" >> "$GITHUB_OUTPUT"
+            echo "signed=true"                  >> "$GITHUB_OUTPUT"
+          else
+            echo "KEYSTORE_BASE64 secret not found – falling back to debug keystore."
+            if [ ! -f ~/.android/debug.keystore ]; then
+              keytool -genkey -v \
+                -keystore ~/.android/debug.keystore \
+                -storepass android \
+                -alias androiddebugkey \
+                -keypass android \
+                -keyalg RSA -keysize 2048 -validity 10000 \
+                -dname "CN=Android Debug,O=Android,C=US"
+            fi
+            echo "keystore_path=${HOME}/.android/debug.keystore" >> "$GITHUB_OUTPUT"
+            echo "signed=false"                                   >> "$GITHUB_OUTPUT"
           fi
 
       # The downloadWasmedge Gradle task fetches the prebuilt arm64 .so.
@@ -203,6 +217,11 @@ jobs:
           sha256sum release-assets/examples/*.zip > release-assets/examples/SHA256SUMS.txt
 
       - name: Build release APK
+        env:
+          KEYSTORE_PATH: ${{ steps.signing.outputs.keystore_path }}
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
+          KEY_ALIAS:     ${{ secrets.KEY_ALIAS }}
+          KEY_PASS:      ${{ secrets.KEY_PASS }}
         run: ./gradlew assembleRelease --no-daemon
 
       - name: Locate APK
