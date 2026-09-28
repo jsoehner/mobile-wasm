@@ -44,6 +44,9 @@ jobs:
         id: signing
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.KEY_PASS }}
         run: |
           mkdir -p ~/.android
           if [ -n "$KEYSTORE_BASE64" ]; then
@@ -51,7 +54,10 @@ jobs:
             KEYSTORE_PATH="$RUNNER_TEMP/release.keystore"
             echo "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
             echo "keystore_path=$KEYSTORE_PATH" >> "$GITHUB_OUTPUT"
-            echo "signed=true"                  >> "$GITHUB_OUTPUT"
+            echo "keystore_pass=$KEYSTORE_PASS" >> "$GITHUB_OUTPUT"
+            echo "key_alias=$KEY_ALIAS" >> "$GITHUB_OUTPUT"
+            echo "key_pass=$KEY_PASS" >> "$GITHUB_OUTPUT"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
           else
             echo "KEYSTORE_BASE64 secret not found – falling back to debug keystore."
             if [ ! -f ~/.android/debug.keystore ]; then
@@ -64,8 +70,12 @@ jobs:
                 -dname "CN=Android Debug,O=Android,C=US"
             fi
             echo "keystore_path=${HOME}/.android/debug.keystore" >> "$GITHUB_OUTPUT"
-            echo "signed=false"                                   >> "$GITHUB_OUTPUT"
+            echo "keystore_pass=android" >> "$GITHUB_OUTPUT"
+            echo "key_alias=androiddebugkey" >> "$GITHUB_OUTPUT"
+            echo "key_pass=android" >> "$GITHUB_OUTPUT"
+            echo "signed=false" >> "$GITHUB_OUTPUT"
           fi
+
 
       # The downloadWasmedge Gradle task fetches the prebuilt arm64 .so.
       # We cache it so repeated CI runs skip the ~30 MB download.
@@ -219,9 +229,9 @@ jobs:
       - name: Build release APK
         env:
           KEYSTORE_PATH: ${{ steps.signing.outputs.keystore_path }}
-          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
-          KEY_ALIAS:     ${{ secrets.KEY_ALIAS }}
-          KEY_PASS:      ${{ secrets.KEY_PASS }}
+          KEYSTORE_PASS: ${{ steps.signing.outputs.keystore_pass }}
+          KEY_ALIAS:     ${{ steps.signing.outputs.key_alias }}
+          KEY_PASS:      ${{ steps.signing.outputs.key_pass }}
         run: ./gradlew assembleRelease --no-daemon
 
       - name: Locate APK
