@@ -1,6 +1,6 @@
 ## 🛡️ Cryptographic Bill of Materials (CBOM) & PQC Migration Assessment
 
-**Format**: CycloneDX (v1.7) | **First-Party Code Crypto Assets**: 2 | **Total Tracked Crypto Assets**: 1
+**Format**: CycloneDX (v1.6) | **First-Party Code Crypto Assets**: 1 | **Total Tracked Crypto Assets**: 1
 
 ### 📊 Post-Quantum Migration Scorecard
 
@@ -16,8 +16,8 @@
 | Evaluation Layer | Coverage / Status | Audit Confidence Assessment |
 |---|---|---|
 | **First-Party Code (`src/`)** | **100% Audited** (0 Custom Primitives) | 🟢 **HIGH** (Direct AST & SAST verified clean) |
-| **Third-Party Supply Chain** | **0.0%** (0 of 3 dependencies cataloged) | 🔴 LOW (Known profiles assimilated) |
-| **Overall Audit Confidence Score** | **25.0%** | **🔴 LOW** (3 unassimilated supply chain dependencies) |
+| **Third-Party Supply Chain** | **0.0%** (0 of 29 dependencies cataloged) | 🔴 LOW (Known profiles assimilated) |
+| **Overall Audit Confidence Score** | **3.3%** | **🔴 LOW** (29 unassimilated supply chain dependencies) |
 
 ### ✅ Post-Quantum Cryptography Migrated Assets
 
@@ -31,7 +31,7 @@
 
 | Component Name | Primitive | Key Length | Quantum Resistance Assessment | Provenance / Location(s) |
 |---|---|---|---|---|
-| `SHA-256` | hash | 256 | Quantum-Resistant (Grover's proof) | First-Party Code (SAST/AST)<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:128`<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:131`<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:133`<br>`app/src/main/kotlin/com/example/mobilewasm/HomeFragment.kt:119` |
+| `SHA-256` | hash | 256 | Quantum-Resistant (Grover's proof) | First-Party Code (SAST/AST)<br>`app/src/main/kotlin/com/example/mobilewasm/HomeFragment.kt:119`<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:128`<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:131`<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:133` |
 
 ### ⚠️ Unassimilated Third-Party Binaries & Cryptographic Blind Spots
 
@@ -39,6 +39,19 @@
 
 | Dependency Name | Version | Package URL (purl) | Status |
 |---|---|---|---|
-| `mobile-wasm` | N/A | `N/A` | 🟡 Unassimilated (No upstream CBOM) |
-| `mobile-wasm` | latest | `pkg:container/mobile-wasm@latest` | 🟡 Unassimilated (No upstream CBOM) |
-| `mobilewasm` | N/A | `pkg:generic/mobilewasm` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/cache` | v6 | `pkg:github/actions/cache@v6` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/checkout` | v4 | `pkg:github/actions/checkout@v4` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/checkout` | v4 | `pkg:github/actions/checkout@v4` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/checkout` | v7.0.1 | `pkg:github/actions/checkout@v7.0.1` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/checkout` | v7.0.1 | `pkg:github/actions/checkout@v7.0.1` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/checkout` | v7.0.1 | `pkg:github/actions/checkout@v7.0.1` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/download-artifact` | v4 | `pkg:github/actions/download-artifact@v4` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/setup-java` | v6 | `pkg:github/actions/setup-java@v6` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/setup-java` | v6.0.1 | `pkg:github/actions/setup-java@v6.0.1` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/setup-python` | v5.6.0 | `pkg:github/actions/setup-python@v5.6.0` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/upload-artifact` | v4 | `pkg:github/actions/upload-artifact@v4` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/upload-artifact` | v4.6.2 | `pkg:github/actions/upload-artifact@v4.6.2` | 🟡 Unassimilated (No upstream CBOM) |
+| `anchore/sbom-action` | v0.24.2 | `pkg:github/anchore/sbom-action@v0.24.2` | 🟡 Unassimilated (No upstream CBOM) |
+| `aquasecurity/trivy-action` | v0.35.0 | `pkg:github/aquasecurity/trivy-action@v0.35.0` | 🟡 Unassimilated (No upstream CBOM) |
+| `cbomkit/cbomkit-action` | v2.3.0 | `pkg:github/cbomkit/cbomkit-action@v2.3.0` | 🟡 Unassimilated (No upstream CBOM) |
+| *... and 14 more unassimilated dependencies* | | | |
