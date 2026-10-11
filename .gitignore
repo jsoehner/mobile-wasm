@@ -20,5 +20,5 @@ app/build/
 gradle-*-bin.zip
 gradle-*/
 
-# Generated BOM artifacts
+# Build & Supply Chain Artifacts
 oss/
