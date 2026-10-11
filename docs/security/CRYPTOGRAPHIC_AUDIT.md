@@ -1,6 +1,6 @@
 ## 🛡️ Cryptographic Bill of Materials (CBOM) & PQC Migration Assessment
 
-**Format**: CycloneDX (v1.7) | **First-Party Code Crypto Assets**: 20 | **Total Tracked Crypto Assets**: 1
+**Format**: CycloneDX (v1.6) | **First-Party Code Crypto Assets**: 1 | **Total Tracked Crypto Assets**: 1
 
 ### 📊 Post-Quantum Migration Scorecard
 
@@ -16,8 +16,8 @@
 | Evaluation Layer | Coverage / Status | Audit Confidence Assessment |
 |---|---|---|
 | **First-Party Code (`src/`)** | **100% Audited** (0 Custom Primitives) | 🟢 **HIGH** (Direct AST & SAST verified clean) |
-| **Third-Party Supply Chain** | **0.0%** (0 of 20 dependencies cataloged) | 🔴 LOW (Known profiles assimilated) |
-| **Overall Audit Confidence Score** | **4.8%** | 🔴 LOW (20 unassimilated supply chain dependencies) |
+| **Third-Party Supply Chain** | **0.0%** (0 of 29 dependencies cataloged) | 🔴 LOW (Known profiles assimilated) |
+| **Overall Audit Confidence Score** | **3.3%** | 🔴 LOW (29 unassimilated supply chain dependencies) |
 
 | **System OS Inventory** | **Pending Update** | 🟡 **Warning** (Local OS crypto components not yet inventoried) |
 
@@ -33,7 +33,7 @@
 
 | Component Name | Primitive | Key Length | Quantum Resistance Assessment | Provenance / Location(s) |
 |---|---|---|---|---|
-| `SHA-256` | hash | 256 | Quantum-Resistant (Grover's proof) | First-Party Code (SAST/AST)<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:128`<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:131`<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:133`<br>`app/src/main/kotlin/com/example/mobilewasm/HomeFragment.kt:119` |
+| `SHA-256` | hash | 256 | Quantum-Resistant (Grover's proof) | First-Party Code (SAST/AST)<br>`app/src/main/kotlin/com/example/mobilewasm/HomeFragment.kt:119`<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:128`<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:131`<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:133` |
 
 ### ⚠️ Unassimilated Third-Party Binaries & Cryptographic Blind Spots
 
@@ -41,19 +41,19 @@
 
 | Dependency Name | Version | Package URL (purl) | Status |
 |---|---|---|---|
-| `mobile-wasm` | N/A | `N/A` | 🟡 Unassimilated (No upstream CBOM) |
-| `mobilewasm` | N/A | `pkg:generic/mobilewasm` | 🟡 Unassimilated (No upstream CBOM) |
-| `checkout` | v4 | `pkg:github/actions/checkout@v4` | 🟡 Unassimilated (No upstream CBOM) |
-| `gitleaks-action` | v2 | `pkg:github/gitleaks/gitleaks-action@v2` | 🟡 Unassimilated (No upstream CBOM) |
-| `setup-buildx-action` | v3 | `pkg:github/docker/setup-buildx-action@v3` | 🟡 Unassimilated (No upstream CBOM) |
-| `build-push-action` | v6 | `pkg:github/docker/build-push-action@v6` | 🟡 Unassimilated (No upstream CBOM) |
-| `trivy-action` | master | `pkg:github/aquasecurity/trivy-action@master` | 🟡 Unassimilated (No upstream CBOM) |
-| `semgrep-action` | v1 | `pkg:github/semgrep/semgrep-action@v1` | 🟡 Unassimilated (No upstream CBOM) |
-| `checkout` | 3d3c42e5aac5ba805825da76410c181273ba90b1 | `pkg:github/actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1` | 🟡 Unassimilated (No upstream CBOM) |
-| `setup-java` | de7274f081f381c8f8158605e0321c36c376e2e6 | `pkg:github/actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6` | 🟡 Unassimilated (No upstream CBOM) |
-| `sbom-action` | 006b7ce8314066bdf1765b4500370d40fa6917a3 | `pkg:github/anchore/sbom-action@006b7ce8314066bdf1765b4500370d40fa6917a3` | 🟡 Unassimilated (No upstream CBOM) |
-| `cbomkit-action` | 34a3d960625ae7f7f1b59455eff93a96df090eb7 | `pkg:github/cbomkit/cbomkit-action@34a3d960625ae7f7f1b59455eff93a96df090eb7` | 🟡 Unassimilated (No upstream CBOM) |
-| `setup-python` | a26af69be951a213d495a4c3e4e4022e16d87065 | `pkg:github/actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065` | 🟡 Unassimilated (No upstream CBOM) |
-| `upload-artifact` | ea165f8d65b6e75b540449e92b4886f43607fa02 | `pkg:github/actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02` | 🟡 Unassimilated (No upstream CBOM) |
-| `setup-java` | v6 | `pkg:github/actions/setup-java@v6` | 🟡 Unassimilated (No upstream CBOM) |
-| *... and 5 more unassimilated dependencies* | | | |
+| `actions/cache` | v6 | `pkg:github/actions/cache@v6` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/checkout` | v4 | `pkg:github/actions/checkout@v4` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/checkout` | v4 | `pkg:github/actions/checkout@v4` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/checkout` | v7.0.1 | `pkg:github/actions/checkout@v7.0.1` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/checkout` | v7.0.1 | `pkg:github/actions/checkout@v7.0.1` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/checkout` | v7.0.1 | `pkg:github/actions/checkout@v7.0.1` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/download-artifact` | v4 | `pkg:github/actions/download-artifact@v4` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/setup-java` | v6 | `pkg:github/actions/setup-java@v6` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/setup-java` | v6.0.1 | `pkg:github/actions/setup-java@v6.0.1` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/setup-python` | v5.6.0 | `pkg:github/actions/setup-python@v5.6.0` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/upload-artifact` | v4 | `pkg:github/actions/upload-artifact@v4` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/upload-artifact` | v4.6.2 | `pkg:github/actions/upload-artifact@v4.6.2` | 🟡 Unassimilated (No upstream CBOM) |
+| `anchore/sbom-action` | v0.24.2 | `pkg:github/anchore/sbom-action@v0.24.2` | 🟡 Unassimilated (No upstream CBOM) |
+| `aquasecurity/trivy-action` | v0.35.0 | `pkg:github/aquasecurity/trivy-action@v0.35.0` | 🟡 Unassimilated (No upstream CBOM) |
+| `cbomkit/cbomkit-action` | v2.3.0 | `pkg:github/cbomkit/cbomkit-action@v2.3.0` | 🟡 Unassimilated (No upstream CBOM) |
+| *... and 14 more unassimilated dependencies* | | | |
