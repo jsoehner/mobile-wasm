@@ -47,7 +47,7 @@
 | `actions/checkout` | v7.0.1 | `pkg:github/actions/checkout@v7.0.1` | 🟡 Unassimilated (No upstream CBOM) |
 | `actions/checkout` | v7.0.1 | `pkg:github/actions/checkout@v7.0.1` | 🟡 Unassimilated (No upstream CBOM) |
 | `actions/checkout` | v7.0.1 | `pkg:github/actions/checkout@v7.0.1` | 🟡 Unassimilated (No upstream CBOM) |
-| `actions/download-artifact` | v4 | `pkg:github/actions/download-artifact@v4` | 🟡 Unassimilated (No upstream CBOM) |
+| `actions/download-artifact` | v8 | `pkg:github/actions/download-artifact@v8` | 🟡 Unassimilated (No upstream CBOM) |
 | `actions/setup-java` | v6 | `pkg:github/actions/setup-java@v6` | 🟡 Unassimilated (No upstream CBOM) |
 | `actions/setup-java` | v6.0.1 | `pkg:github/actions/setup-java@v6.0.1` | 🟡 Unassimilated (No upstream CBOM) |
 | `actions/setup-python` | v5.6.0 | `pkg:github/actions/setup-python@v5.6.0` | 🟡 Unassimilated (No upstream CBOM) |
