@@ -322,7 +322,7 @@ jobs:
           path: examples
 
       - name: Create GitHub Release and upload APK
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.tag.outputs.version_tag }}
           name: MobileWasm ${{ needs.tag.outputs.version_tag }}
