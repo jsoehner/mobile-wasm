@@ -1,6 +1,6 @@
 ## 🛡️ Cryptographic Bill of Materials (CBOM) & PQC Migration Assessment
 
-**Format**: CycloneDX (v1.7) | **First-Party Code Crypto Assets**: 2 | **Total Tracked Crypto Assets**: 1
+**Format**: CycloneDX (v1.6) | **First-Party Code Crypto Assets**: 1 | **Total Tracked Crypto Assets**: 1
 
 ### 📊 Post-Quantum Migration Scorecard
 
@@ -15,9 +15,9 @@
 
 | Evaluation Layer | Coverage / Status | Audit Confidence Assessment |
 |---|---|---|
-| **First-Party Code (`src/`, `scripts/`)** | **100% Audited** (2 Crypto Primitive(s) Inventoried) | 🟢 **HIGH** (Direct AST & SAST verified) |
-| **Third-Party Supply Chain** | **0.0%** (0 of 3 dependencies cataloged) | 🔴 LOW (Known profiles assimilated) |
-| **Overall Audit Confidence Score** | **25.0%** | 🔴 LOW (3 unassimilated supply chain dependencies) |
+| **First-Party Code (`src/`, `scripts/`)** | **100% Audited** (1 Crypto Primitive(s) Inventoried) | 🟢 **HIGH** (Direct AST & SAST verified) |
+| **Third-Party Supply Chain** | **91.3%** (21 of 23 dependencies cataloged) | 🟢 HIGH (Known profiles assimilated) |
+| **Overall Audit Confidence Score** | **91.7%** | 🟢 HIGH (2 unassimilated supply chain dependencies) |
 
 | **System OS Inventory** | **Pending Update** | 🟡 **Warning** (Local OS crypto components not yet inventoried) |
 
@@ -41,6 +41,5 @@
 
 | Dependency Name | Version | Package URL (purl) | Status |
 |---|---|---|---|
-| `mobile-wasm` | N/A | `N/A` | 🟡 Unassimilated (No upstream CBOM) |
-| `mobile-wasm` | latest | `pkg:container/mobile-wasm@latest` | 🟡 Unassimilated (No upstream CBOM) |
-| `mobilewasm` | N/A | `pkg:generic/mobilewasm` | 🟡 Unassimilated (No upstream CBOM) |
+| `gradle-wrapper` | UNKNOWN | `pkg:maven/org.gradle.wrapper.GradleWrapperMain/gradle-wrapper` | 🟡 Unassimilated (No upstream CBOM) |
+| `gradle/actions/setup-gradle` | v6 | `pkg:github/gradle/actions@v6#setup-gradle` | 🟡 Unassimilated (No upstream CBOM) |
