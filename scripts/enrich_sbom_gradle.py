@@ -81,7 +81,7 @@ def enrich_sbom(sbom_path: Path):
             "version": 1,
             "metadata": {
                 "component": {
-                    "name": "mobile-wasm",
+                    "name": "spring-ai-blog-agent",
                     "type": "application"
                 }
             },
