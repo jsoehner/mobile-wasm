@@ -242,14 +242,14 @@ jobs:
           echo "name=$(basename $APK)" >> "$GITHUB_OUTPUT"
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-apk
           path: ${{ steps.apk_path.outputs.path }}
           retention-days: 30
 
       - name: Upload example package artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: example-packages
           path: release-assets/examples/*
