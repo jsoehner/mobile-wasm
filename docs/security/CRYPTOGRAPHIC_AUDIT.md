@@ -47,7 +47,7 @@
 | `constraintlayout` | 2.2.2 | `pkg:maven/androidx.constraintlayout/constraintlayout@2.2.2` | 🟡 Unassimilated (No upstream CBOM) |
 | `core-ktx` | 1.19.1 | `pkg:maven/androidx.core/core-ktx@1.19.1` | 🟡 Unassimilated (No upstream CBOM) |
 | `navigation-fragment-ktx` | 2.10.1 | `pkg:maven/androidx.navigation/navigation-fragment-ktx@2.10.1` | 🟡 Unassimilated (No upstream CBOM) |
-| `navigation-ui-ktx` | 2.10.1 | `pkg:maven/androidx.navigation/navigation-ui-ktx@2.10.1` | 🟡 Unassimilated (No upstream CBOM) |
+| `navigation-ui-ktx` | 2.10.2 | `pkg:maven/androidx.navigation/navigation-ui-ktx@2.10.2` | 🟡 Unassimilated (No upstream CBOM) |
 | `material` | 1.14.0 | `pkg:maven/com.google.android.material/material@1.14.0` | 🟡 Unassimilated (No upstream CBOM) |
 
 ### ⚛️ Post-Quantum Cryptography (PQC) Modernization Roadmap
