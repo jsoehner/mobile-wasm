@@ -33,7 +33,7 @@
 
 | Component Name | Primitive | Key Length | Quantum Resistance Assessment | Provenance / Location(s) |
 |---|---|---|---|---|
-| `SHA-256` | hash | 256 | Quantum-Resistant (Grover's proof) | First-Party Code (SAST/AST)<br>`app/build.gradle.kts:94`<br>`app/build.gradle.kts:98`<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:128`<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:131`<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:133`<br>`app/src/main/kotlin/com/example/mobilewasm/HomeFragment.kt:119` |
+| `SHA-256` | hash | 256 | Quantum-Resistant (Grover's proof) | First-Party Code (SAST/AST)<br>`app/build.gradle.kts:94`<br>`app/build.gradle.kts:98`<br>`app/src/main/kotlin/com/example/mobilewasm/HomeFragment.kt:119`<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:128`<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:131`<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:133` |
 
 ### ⚠️ Unassimilated Third-Party Binaries & Cryptographic Blind Spots
 
@@ -43,7 +43,7 @@
 |---|---|---|---|
 | `gradle-wrapper` | UNKNOWN | `pkg:maven/org.gradle.wrapper.GradleWrapperMain/gradle-wrapper` | 🟡 Unassimilated (No upstream CBOM) |
 | `gradle/actions/setup-gradle` | v6 | `pkg:github/gradle/actions@v6#setup-gradle` | 🟡 Unassimilated (No upstream CBOM) |
-| `appcompat` | 1.7.0 | `pkg:maven/androidx.appcompat/appcompat@1.7.0` | 🟡 Unassimilated (No upstream CBOM) |
+| `appcompat` | 1.8.0 | `pkg:maven/androidx.appcompat/appcompat@1.8.0` | 🟡 Unassimilated (No upstream CBOM) |
 | `constraintlayout` | 2.2.2 | `pkg:maven/androidx.constraintlayout/constraintlayout@2.2.2` | 🟡 Unassimilated (No upstream CBOM) |
 | `core-ktx` | 1.19.1 | `pkg:maven/androidx.core/core-ktx@1.19.1` | 🟡 Unassimilated (No upstream CBOM) |
 | `navigation-fragment-ktx` | 2.10.1 | `pkg:maven/androidx.navigation/navigation-fragment-ktx@2.10.1` | 🟡 Unassimilated (No upstream CBOM) |
