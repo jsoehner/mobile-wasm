@@ -1,5 +1,7 @@
 # MobileWasm
 
+> ✅ **Verified Functional (PWA & Wasm Runtime):** Last verified on `2026-11-20` by **Jeffs' Automated build and deploy agent** — see [`docs/BUILD_VERIFICATION.md`](docs/BUILD_VERIFICATION.md) for full browser, `curl`, WebAssembly ABI, and BOM test evidence.
+
 An Android application **and** companion Progressive Web App (PWA) that run WebAssembly modules
 in a sandboxed environment — on-device via [WasmEdge](https://wasmedge.org/) (Android) or
 directly in the browser via the WebAssembly JavaScript API (PWA).
