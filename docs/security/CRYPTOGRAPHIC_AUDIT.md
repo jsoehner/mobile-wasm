@@ -33,7 +33,7 @@
 
 | Component Name | Primitive | Key Length | Quantum Resistance Assessment | Provenance / Location(s) |
 |---|---|---|---|---|
-| `SHA-256` | hash | 256 | Quantum-Resistant (Grover's proof) | First-Party Code (SAST/AST)<br>`app/build.gradle.kts:94`<br>`app/build.gradle.kts:98`<br>`app/src/main/kotlin/com/example/mobilewasm/HomeFragment.kt:119`<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:128`<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:131`<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:133` |
+| `SHA-256` | hash | 256 | Quantum-Resistant (Grover's proof) | First-Party Code (SAST/AST)<br>`app/build.gradle.kts:94`<br>`app/build.gradle.kts:98`<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:128`<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:131`<br>`app/src/main/kotlin/com/example/mobilewasm/PackageInstaller.kt:133`<br>`app/src/main/kotlin/com/example/mobilewasm/HomeFragment.kt:119` |
 
 ### ⚠️ Unassimilated Third-Party Binaries & Cryptographic Blind Spots
 
